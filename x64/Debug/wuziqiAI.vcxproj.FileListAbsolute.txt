@@ -1,0 +1,2 @@
+E:\c&c++ workspace\wuziqiAI\wuziqiAI\x64\Debug\wuziqiAI.exe
+E:\c&c++ workspace\wuziqiAI\wuziqiAI\x64\Debug\wuziqiAI.pdb
