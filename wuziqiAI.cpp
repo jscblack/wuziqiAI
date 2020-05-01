@@ -16,6 +16,7 @@ int main()
 	//game started
 	game();
 	//game ended
+
 	//system("pause");
 	return 0;
 }
@@ -24,11 +25,11 @@ void getpos(int& x, int& y)
 {
 	for (int i = 0; i < 15; i++)
 	{
-		if (abs(i * 60 + 35 - x) < 30)
+		if (abs(i * 60 + 55 - x) < 30)
 		{
 			for (int j = 0; j < 15; j++)
 			{
-				if (abs(j * 60 + 35 - y) < 30)
+				if (abs(j * 60 + 55 - y) < 30)
 				{
 					x = i + 1;
 					y = j + 1;
@@ -63,6 +64,10 @@ int win(int** a)//获胜条件，1黑获胜，2白获胜，3和局
 				{
 					return 1;
 				}
+				if (i + 4 <= 15 && j - 4 >= 0 && a[i + 1][j - 1] == 1 && a[i + 2][j - 2] == 1 && a[i + 3][j - 3] == 1 && a[i + 4][j - 4] == 1)
+				{
+					return 1;
+				}
 			}
 			else if (a[i][j] == 2)
 			{
@@ -76,7 +81,11 @@ int win(int** a)//获胜条件，1黑获胜，2白获胜，3和局
 				}
 				if (i + 4 <= 15 && j + 4 <= 15 && a[i + 1][j + 1] == 2 && a[i + 2][j + 2] == 2 && a[i + 3][j + 3] == 2 && a[i + 4][j + 4] == 2)
 				{
-					return 1;
+					return 2;
+				}
+				if (i + 4 <= 15 && j - 4 >= 0 && a[i + 1][j - 1] == 2 && a[i + 2][j - 2] == 2 && a[i + 3][j - 3] == 2 && a[i + 4][j - 4] == 2)
+				{
+					return 2;
 				}
 			}
 		}
@@ -111,7 +120,7 @@ void game()
 							//mouse.y
 				int mx = mouse.x;
 				int my = mouse.y;
-				if (mx >= 970 && mx <= 1070 && my >= 800 && my <= 875)//
+				if (mx >= 990 && mx <= 1090 && my >= 820 && my <= 895)//
 				{
 					if (mouse.mkLButton)
 					{
@@ -129,7 +138,7 @@ void game()
 						setlinecolor(BLACK);
 						setfillstyle(BS_SOLID);
 						setfillcolor(BLACK);
-						fillcircle((mx - 1) * 60 + 35, (my - 1) * 60 + 35, 20);
+						fillcircle((mx - 1) * 60 + 55, (my - 1) * 60 + 55, 20);
 						hand = 2;
 						break;
 					}
@@ -146,7 +155,7 @@ void game()
 							//mouse.y
 				int mx = mouse.x;
 				int my = mouse.y;
-				if (mx >= 970 && mx <= 1070 && my >= 800 && my <= 875)
+				if (mx >= 990 && mx <= 1090 && my >= 820 && my <= 895)
 				{
 					if (mouse.mkLButton)
 					{
@@ -164,7 +173,7 @@ void game()
 						setlinestyle(PS_SOLID | PS_JOIN_BEVEL, 1);
 						setfillstyle(BS_SOLID);
 						setfillcolor(WHITE);
-						fillcircle((mx - 1) * 60 + 35, (my - 1) * 60 + 35, 20);
+						fillcircle((mx - 1) * 60 + 55, (my - 1) * 60 + 55, 20);
 						hand = 1;
 						break;
 					}
@@ -184,37 +193,37 @@ void game()
 	case 1:
 	{
 		settextstyle(&win_font);
-		outtextxy(970, 200, _T("黑胜"));
+		outtextxy(1020, 200, _T("黑胜"));
 		break;
 	}
 
 	case 2:
 	{
 		settextstyle(&win_font);
-		outtextxy(970, 200, _T("白胜"));
+		outtextxy(1020, 200, _T("白胜"));
 		break;
 	}
 
 	case 3:
 	{
 		settextstyle(&win_font);
-		outtextxy(970, 200, _T("和棋"));
+		outtextxy(1020, 200, _T("和棋"));
 		break;
 	}
 
 	}
-	free(*boardlay);
+	free(boardlay);
 	Sleep(2000);
 	return;
 }
 void board_init()//绘制原始棋盘
 {
-	initgraph(1250, 910); // 初始化绘图环境
+	initgraph(1250, 920); // 初始化绘图环境
 	setbkcolor(WHITE);
 	cleardevice();
 	setbkmode(TRANSPARENT); // 设置透明文字输出背景
 	setfillcolor(RGB(255, 205, 150));//棋盘颜色
-	solidrectangle(35, 35, 875, 875);//棋盘大小
+	solidrectangle(55, 55, 895, 895);//棋盘大小
 	//文字
 	settextstyle(26, 13, _T("Consolas"), 0, 0, 1000, false, false, false);//文字大小
 	gettextstyle(&overlay_f);						//获取当前字体
@@ -232,14 +241,14 @@ void board_init()//绘制原始棋盘
 		//绘制坐标
 		if (i >= 10)
 		{
-			outtextxy(60 * (i - 1) - 6 + 27, 0, char((i + '0') / ('9' + 1) + '0'));
-			outtextxy(60 * (i - 1) + 6 + 27, 0, char((i + '0') % ('9' + 1) + '0'));
+			outtextxy(60 * (i - 1) - 6 + 47, 2, char((i + '0') / ('9' + 1) + '0'));
+			outtextxy(60 * (i - 1) + 6 + 47, 2, char((i + '0') % ('9' + 1) + '0'));
 		}
 		else
 		{
-			outtextxy(60 * (i - 1) + 27, 0, char(i + '0'));
+			outtextxy(60 * (i - 1) + 47, 2, char(i + '0'));
 		}
-		outtextxy(7, 60 * (i - 1) + 23, char('A' + i - 1));
+		outtextxy(9, 60 * (i - 1) + 43, char('A' + i - 1));
 
 		//绘制棋盘线
 		if (i == 1 || i == 15)
@@ -250,23 +259,26 @@ void board_init()//绘制原始棋盘
 		{
 			setlinestyle(PS_SOLID | PS_JOIN_BEVEL, 3);
 		}
-		line(35, 35 + 60 * (i - 1), 875, 35 + 60 * (i - 1));
-		line(35 + 60 * (i - 1), 875, 35 + 60 * (i - 1), 35);
+		line(55, 55 + 60 * (i - 1), 895, 55 + 60 * (i - 1));
+		line(55 + 60 * (i - 1), 895, 55 + 60 * (i - 1), 55);
 	}
 	//填充点
-	fillcircle(215, 215, 4);
-	fillcircle(215, 695, 4);
-	fillcircle(455, 455, 6);
-	fillcircle(695, 215, 4);
-	fillcircle(695, 695, 4);
+	fillcircle(235, 235, 4);
+	fillcircle(235, 715, 4);
+	fillcircle(475, 475, 6);
+	fillcircle(715, 235, 4);
+	fillcircle(715, 715, 4);
 	//退出按钮
 	setlinestyle(PS_SOLID | PS_JOIN_BEVEL, 2);
 	setlinecolor(BLACK);
 	setfillstyle(BS_SOLID);
 	setfillcolor(WHITE);
-	fillrectangle(970, 800, 1170, 855);
+	fillrectangle(990, 55, 1190, 745);
+	fillrectangle(990, 765, 1190, 820);
+	fillrectangle(990, 820, 1190, 875);
 	overlay_f.lfHeight = 60;
-	overlay_f.lfWidth = 27;
+	overlay_f.lfWidth = 24;
 	settextstyle(&overlay_f);						// 重载入字体
-	outtextxy(1010, 800, _T("退出"));
+	outtextxy(1030, 765, _T("读 取"));
+	outtextxy(1030, 820, _T("退 出"));
 }
