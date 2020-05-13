@@ -283,6 +283,45 @@ void ai(int** boardlay, int& tarx, int& tary)
 
 //gui和逻辑已经构建完成2020.5.9
 //bug基本修复
+int uploadsav()
+{
+	using namespace AlibabaCloud::OSS;
+	/* 初始化OSS账号信息 */
+	std::string AccessKeyId = "LTAI4G9vzd4PdQJwV8tQRsKG";
+	std::string AccessKeySecret = "N53YmQiN0I09wmKJt230vxinKjeOd8";
+	std::string Endpoint = "oss-cn-beijing.aliyuncs.com";
+	std::string BucketName = "wuziqi-sav";
+	/* yourObjectName表示上传文件到OSS时需要指定包含文件后缀在内的完整路径，例如abc/efg/123.jpg */
+	std::string ObjectName = "test/sav.dat";
+
+	/* 初始化网络等资源 */
+	std::cout << "正在连接服务器" << "\n";
+	InitializeSdk();
+	
+	std::cout << "连接服务器成功" << "\n";
+	//GetModuleFileName()
+	ClientConfiguration conf;
+	OssClient client(Endpoint, AccessKeyId, AccessKeySecret, conf);
+
+	/* 上传文件 */
+	/* yourLocalFilename由本地文件路径加文件名包括后缀组成，例如/users/local/myfile.txt */
+	std::cout << "正在上传存档" << "\n";
+	auto outcome = client.PutObject(BucketName, ObjectName, "E:/DxDiag.txt");
+	
+	if (!outcome.isSuccess()) {
+		/* 异常处理 */
+		std::cout << "PutObject fail" <<
+			",code:" << outcome.error().Code() <<
+			",message:" << outcome.error().Message() <<
+			",requestId:" << outcome.error().RequestId() << std::endl;
+		ShutdownSdk();
+		return -1;
+	}
+	/* 释放网络等资源 */
+	ShutdownSdk();
+	std::cout << "存档上传成功" << "\n";
+	return 0;
+}
 void gamesettlement(int** a)
 {
 	LOGFONT win_font = cord;
@@ -350,7 +389,7 @@ void savegame(int** a, bool click, int hand)
 		{
 			FILE* out;
 			out = fopen("wuziqi.sav", "w");
-			int chksum = 20001122;
+			long long chksum = 20001122;
 			for (int i = 1; i <= 15; i++)
 			{
 				for (int j = 1; j <= 15; j++)
@@ -360,11 +399,24 @@ void savegame(int** a, bool click, int hand)
 				}
 			}
 			fprintf(out, "%d ", hand);	//手
-			fprintf(out, "%d", chksum); //校验码
+			fprintf(out, "%lld", chksum); //校验码
 			fclose(out);
 			free(out);
-			printf("\a");
+				printf("\a");
 			MessageBox(wnd, _T("保存成功\n"), _T("Warning"), MB_OK);
+			if (uploadsav() == 0)
+			{
+				printf("\a");
+				MessageBox(wnd, _T("上传成功\n"), _T("Warning"), MB_OK);
+			}
+			else
+			{
+				printf("\a");
+				MessageBox(wnd, _T("上传失败\n"), _T("Warning"), MB_OK);
+			}
+
+
+			
 		}
 	}
 	return;

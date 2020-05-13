@@ -14,7 +14,7 @@
 #include <string>
 #include <Windows.h>
 #include <io.h>
-using namespace std;
+#include <alibabacloud/oss/OssClient.h>
 void board_init();
 void game();
 void getpos(int& x, int& y);
