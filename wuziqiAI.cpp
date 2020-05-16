@@ -3,7 +3,7 @@
  * @Website: www.yilantingfeng.site
  * @E-mail: gehrychiang@aliyun.com
  */
- //引用库
+//引用库
 #include "wuziqiAI.h"
 
 int main()
@@ -19,13 +19,30 @@ int main()
 	return 0;
 }
 //ai实现
-int overall_evaluate(int** boardlay) //对电脑而言的
+int intpow(int a, int n)
+{
+	if (n == 0)
+	{
+		return 1;
+	}
+	else
+	{
+		n--;
+		while (n--)
+		{
+			a *= a;
+		}
+		return a;
+	}
+}
+
+int overall_evaluate(int **boardlay) //对电脑而言的
 {
 	//获取原棋盘布局，避免产生冲突
-	int** bod = (int**)calloc(25, sizeof(int**)); //1代表黑子 2代表白子
+	int **bod = (int **)calloc(25, sizeof(int **)); //1代表黑子 2代表白子
 	for (int i = 0; i <= 20; ++i)
 	{
-		*(bod + i) = (int*)calloc(25, sizeof(int));
+		*(bod + i) = (int *)calloc(25, sizeof(int));
 	}
 
 	for (int i = 1; i <= 15; i++)
@@ -61,7 +78,7 @@ int overall_evaluate(int** boardlay) //对电脑而言的
 				{
 					cnt--;
 				}
-				humsum += pow(10, cnt != 0 ? cnt : 1);
+				humsum += intpow(10, cnt != 0 ? cnt : 1);
 				j = j + pos - 1;
 			}
 			else if (bod[i][j] == 2) //白子
@@ -83,7 +100,7 @@ int overall_evaluate(int** boardlay) //对电脑而言的
 				{
 					cnt--;
 				}
-				aisum += pow(10, cnt!=0?cnt:1);
+				aisum += intpow(10, cnt != 0 ? cnt : 1);
 				j = j + pos - 1;
 			}
 		}
@@ -113,7 +130,7 @@ int overall_evaluate(int** boardlay) //对电脑而言的
 					cnt--;
 				}
 				if (cnt > 1)
-					humsum += pow(10, cnt);
+					humsum += intpow(10, cnt);
 				i = i + pos - 1;
 			}
 			else if (bod[i][j] == 2) //白子
@@ -136,7 +153,7 @@ int overall_evaluate(int** boardlay) //对电脑而言的
 					cnt--;
 				}
 				if (cnt > 1)
-					aisum += pow(10, cnt);
+					aisum += intpow(10, cnt);
 				i = i + pos - 1;
 			}
 		}
@@ -168,7 +185,7 @@ int overall_evaluate(int** boardlay) //对电脑而言的
 				}
 				if (cnt > 1)
 				{
-					humsum += pow(10, cnt);
+					humsum += intpow(10, cnt);
 				}
 				k = k + pos - 1;
 			}
@@ -193,7 +210,7 @@ int overall_evaluate(int** boardlay) //对电脑而言的
 				}
 				if (cnt > 1)
 				{
-					aisum += pow(10, cnt);
+					aisum += intpow(10, cnt);
 				}
 				k = k + pos - 1;
 			}
@@ -227,7 +244,7 @@ int overall_evaluate(int** boardlay) //对电脑而言的
 				}
 				if (cnt > 1)
 				{
-					humsum += pow(10, cnt);
+					humsum += intpow(10, cnt);
 				}
 				k = k + pos - 1;
 			}
@@ -252,7 +269,7 @@ int overall_evaluate(int** boardlay) //对电脑而言的
 				}
 				if (cnt > 1)
 				{
-					aisum += pow(10, cnt);
+					aisum += intpow(10, cnt);
 				}
 				k = k + pos - 1;
 			}
@@ -263,13 +280,13 @@ int overall_evaluate(int** boardlay) //对电脑而言的
 	return aisum - humsum;
 }
 
-void ai(int** boardlay, int& tarx, int& tary)
+void ai(int **boardlay, int &tarx, int &tary)
 {
 	//获取原棋盘布局，避免产生冲突
-	int** bod = (int**)calloc(25, sizeof(int**)); //1代表黑子 2代表白子
+	int **bod = (int **)calloc(25, sizeof(int **)); //1代表黑子 2代表白子
 	for (int i = 0; i <= 20; ++i)
 	{
-		*(bod + i) = (int*)calloc(25, sizeof(int));
+		*(bod + i) = (int *)calloc(25, sizeof(int));
 	}
 
 	for (int i = 1; i <= 15; i++)
@@ -283,46 +300,172 @@ void ai(int** boardlay, int& tarx, int& tary)
 
 //gui和逻辑已经构建完成2020.5.9
 //bug基本修复
+std::string sha1(std::string s)
+{
+	const char HEX_CHAR[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+	const unsigned int K[] = {0x5A827999, 0x6ED9EBA1, 0x8F1BBCDC, 0xCA62C1D6};
+	//扩展成K*512位
+	unsigned int l;
+	l = s.length() * 8;
+	unsigned int*data = (unsigned int*)calloc(sizeof(unsigned int), ((l / 512) +1) * 512);
+	for (unsigned int i = 0; i < s.length(); ++i)
+	{
+		data[i / 4] |= (s[i] << (unsigned int)8 * (3 - (i % 4)));
+	}
+	data[s.length() / 4] |= (128 << (unsigned int)8 * (3 - (s.length() % 4)));
+	data[((l / 512) + 1) * 512 / 32 - 1] = l;
+	l = (l / 512) + 1;
+	//开始计算
+	unsigned int H[5], G[5];
+	H[0] = G[0] = 0x67452301;
+	H[1] = G[1] = 0xEFCDAB89;
+	H[2] = G[2] = 0x98BADCFE;
+	H[3] = G[3] = 0x10325476;
+	H[4] = G[4] = 0xC3D2E1F0;
+	for (unsigned int i = 0; i < l; ++i)
+	{
+		unsigned int W[80];
+		int t;
+		for (t = 0; t < 16; ++t)
+			W[t] = data[i * 16 + t];
+		for (t = 16; t < 80; ++t)
+		{
+			unsigned int tmp = W[t - 3] ^ W[t - 8] ^ W[t - 14] ^ W[t - 16];
+			W[t] = (tmp << 1) | (tmp >> 31);
+		}
+		unsigned int tmp;
+		for (t = 0; t < 5; ++t)
+			H[t] = G[t];
+		for (t = 0; t < 20; ++t)
+		{
+			tmp = ((H[0] << 5) | (H[0] >> 27)) + ((H[1] & H[2]) | (~H[1] & H[3])) + H[4] + W[t] + K[0];
+			H[4] = H[3];
+			H[3] = H[2];
+			H[2] = (H[1] << 30) | (H[1] >> 2);
+			H[1] = H[0];
+			H[0] = tmp;
+		}
+		for (t = 20; t < 40; ++t)
+		{
+			tmp = ((H[0] << 5) | (H[0] >> 27)) + (H[1] ^ H[2] ^ H[3]) + H[4] + W[t] + K[1];
+			H[4] = H[3];
+			H[3] = H[2];
+			H[2] = (H[1] << 30) | (H[1] >> 2);
+			H[1] = H[0];
+			H[0] = tmp;
+		}
+		for (t = 40; t < 60; ++t)
+		{
+			tmp = ((H[0] << 5) | (H[0] >> 27)) + ((H[1] & H[2]) | (H[2] & H[3]) | (H[1] & H[3])) + H[4] + W[t] + K[2];
+			H[4] = H[3];
+			H[3] = H[2];
+			H[2] = (H[1] << 30) | (H[1] >> 2);
+			H[1] = H[0];
+			H[0] = tmp;
+		}
+		for (t = 60; t < 80; ++t)
+		{
+			tmp = ((H[0] << 5) | (H[0] >> 27)) + (H[1] ^ H[2] ^ H[3]) + H[4] + W[t] + K[3];
+			H[4] = H[3];
+			H[3] = H[2];
+			H[2] = (H[1] << 30) | (H[1] >> 2);
+			H[1] = H[0];
+			H[0] = tmp;
+		}
+		for (t = 0; t < 5; ++t)
+			G[t] += H[t];
+	}
+	free(data);
+	std::string buf;
+	for (int i = 0; i < 40; ++i)
+	{
+		buf += HEX_CHAR[(G[i / 8] >> (4 * (7 - (i % 8)))) & 0xf];
+	}
+	return buf;
+}
+
+std::string exe_cmd(const char *cmd)
+{
+	char buffer[128] = {0};
+	std::string result;
+	FILE *pipe = _popen(cmd, "r");
+	if (!pipe)
+		throw std::runtime_error("_popen() failed!");
+	while (!feof(pipe))
+	{
+		if (fgets(buffer, 128, pipe) != NULL)
+			result += buffer;
+	}
+	_pclose(pipe);
+	result.erase(std::remove(result.begin(), result.end(), '\r'), result.end());
+	result.erase(std::remove(result.begin(), result.end(), '\n'), result.end());
+	result.erase(std::remove(result.begin(), result.end(), ' '), result.end());
+	result = result.erase(0, 12);
+	return result;
+}
+
+std::string getDiskId()
+{
+	std::string disc = exe_cmd("wmic BaseBoard get serialnumber");
+	disc = sha1(disc);
+	return disc;
+}
+
+void ProgressCallback(size_t increment, int64_t transfered, int64_t total, void *userData)
+{
+	std::cout << "ProgressCallback[" << userData << "] => " << increment << " ," << transfered << "," << total << std::endl;
+}
+
 int uploadsav()
 {
 	using namespace AlibabaCloud::OSS;
 	/* 初始化OSS账号信息 */
-	std::string AccessKeyId = "xxx";
-	std::string AccessKeySecret = "xxx";
+	std::string AccessKeyId = "LTAI4G9vzd4PdQJwV8tQRsKG";
+	std::string AccessKeySecret = "N53YmQiN0I09wmKJt230vxinKjeOd8";
 	std::string Endpoint = "oss-cn-beijing.aliyuncs.com";
 	std::string BucketName = "wuziqi-sav";
 	/* yourObjectName表示上传文件到OSS时需要指定包含文件后缀在内的完整路径，例如abc/efg/123.jpg */
-	std::string ObjectName = "test/sav.dat";
-
+	std::string ObjectName = "sav/";
+	ObjectName += DiskId;
+	ObjectName += ".sav";
 	/* 初始化网络等资源 */
-	std::cout << "正在连接服务器" << "\n";
+	std::cout << "正在连接服务器"
+			  << "\n";
 	InitializeSdk();
-	
-	std::cout << "连接服务器成功" << "\n";
+
+	std::cout << "连接服务器成功"
+			  << "\n";
 	//GetModuleFileName()
 	ClientConfiguration conf;
 	OssClient client(Endpoint, AccessKeyId, AccessKeySecret, conf);
 
 	/* 上传文件 */
 	/* yourLocalFilename由本地文件路径加文件名包括后缀组成，例如/users/local/myfile.txt */
-	std::cout << "正在上传存档" << "\n";
-	auto outcome = client.PutObject(BucketName, ObjectName, "E:/DxDiag.txt");
-	
-	if (!outcome.isSuccess()) {
+	std::cout << "正在上传存档"
+			  << "\n";
+	//auto outcome = client.PutObject(BucketName, ObjectName, "E:/DxDiag.txt");
+	std::shared_ptr<std::iostream> content = std::make_shared<std::fstream>(ClientFile, std::ios::in | std::ios::binary);
+	PutObjectRequest request(BucketName, ObjectName, content);
+	TransferProgress progressCallback = {ProgressCallback, nullptr};
+	request.setTransferProgress(progressCallback);
+	auto outcome = client.PutObject(request);
+	if (!outcome.isSuccess())
+	{
+
 		/* 异常处理 */
-		std::cout << "PutObject fail" <<
-			",code:" << outcome.error().Code() <<
-			",message:" << outcome.error().Message() <<
-			",requestId:" << outcome.error().RequestId() << std::endl;
+		std::cout << "PutObject fail"
+				  << ",code:" << outcome.error().Code() << ",message:" << outcome.error().Message() << ",requestId:" << outcome.error().RequestId() << std::endl;
 		ShutdownSdk();
 		return -1;
 	}
 	/* 释放网络等资源 */
 	ShutdownSdk();
-	std::cout << "存档上传成功" << "\n";
+	std::cout << "存档上传成功"
+			  << "\n";
 	return 0;
 }
-void gamesettlement(int** a)
+
+void gamesettlement(int **a)
 {
 	LOGFONT win_font = cord;
 	win_font.lfHeight = 90;
@@ -380,67 +523,68 @@ bool quitgame(bool click)
 	return 0;
 }
 
-void savegame(int** a, bool click, int hand)
+void savegame(int **a, bool click, int hand)
 {
 	if (click)
 	{
 		HWND wnd = GetHWnd();
 		if (MessageBox(wnd, _T("确定存档吗。\n"), _T("Warning"), MB_YESNO | MB_ICONQUESTION) == IDYES)
 		{
-			FILE* out;
-			out = fopen("wuziqi.sav", "w");
-			long long chksum = 20001122;
+			FILE *out;
+			fopen_s(&out, "wuziqi.sav", "w");
+			std::string chksum;
 			for (int i = 1; i <= 15; i++)
 			{
 				for (int j = 1; j <= 15; j++)
 				{
 					fprintf(out, "%d ", a[i][j]);
-					chksum = (chksum ^ a[i][j]);
+					chksum += char(a[i][j]+'0');
 				}
 			}
-			fprintf(out, "%d ", hand);	//手
-			fprintf(out, "%lld", chksum); //校验码
+			fprintf(out, "%d ", hand);	  //手
+			chksum = sha1(chksum);
+			fprintf(out, "%s", chksum.c_str()); //校验码
 			fclose(out);
-			free(out);
-				printf("\a");
+			//free(out);
+			printf("\a");
 			MessageBox(wnd, _T("保存成功\n"), _T("Warning"), MB_OK);
-			if (uploadsav() == 0)
+			if (cloudsave)
 			{
-				printf("\a");
-				MessageBox(wnd, _T("上传成功\n"), _T("Warning"), MB_OK);
+				if (uploadsav() == 0)
+				{
+					printf("\a");
+					MessageBox(wnd, _T("上传成功\n"), _T("Warning"), MB_OK);
+				}
+				else
+				{
+					printf("\a");
+					MessageBox(wnd, _T("上传失败\n"), _T("Warning"), MB_OK);
+				}
 			}
-			else
-			{
-				printf("\a");
-				MessageBox(wnd, _T("上传失败\n"), _T("Warning"), MB_OK);
-			}
-
-
-			
 		}
 	}
 	return;
 }
 
-int loadgame(int** a)
+int loadgame(int **a)
 {
-
 	HWND wnd = GetHWnd();
-	if (!access("wuziqi.sav", 0)) //
+	if (!_access("wuziqi.sav", 0)) //
 	{
 		printf("\a");
 		if (MessageBox(wnd, _T("检测到存档，是否读取？\n"), _T("Warning"), MB_YESNO | MB_ICONQUESTION) == IDYES)
 		{
-			FILE* in;
-			in = fopen("wuziqi.sav", "r");
-			int* tmpsav = (int*)calloc(300, sizeof(int)); //存档读取缓冲
-			int chksum = 20001122;
+			FILE *in;
+			fopen_s(&in, "wuziqi.sav", "r");
+			int *tmpsav = (int *)calloc(300, sizeof(int)); //存档读取缓冲
+			std::string redchk;
+			redchk.resize(40);
+			std::string chksum;
 			int cntblack = 0;
 			int cntwhite = 0;
-			for (int i = 0; i < 15 * 15 + 2; i++)
+			for (int i = 0; i < 15 * 15 + 1; i++)
 			{
-				fscanf(in, "%d", tmpsav + i);
-
+				fscanf_s(in, "%d", tmpsav + i);
 				if (i < 15 * 15)
 				{
 					if (*(tmpsav + i) == 1)
@@ -451,10 +595,15 @@ int loadgame(int** a)
 					{
 						cntwhite++;
 					}
-					chksum = (chksum ^ *(tmpsav + i));
+					chksum += char(*(tmpsav + i) + '0');
 				}
 			}
-			if (chksum != *(tmpsav + 15 * 15 + 1) || *(tmpsav + 15 * 15) != cntblack - cntwhite + 1)
+			chksum = sha1(chksum);
+			fscanf_s(in, "%s",&redchk[0],50);
+			//std::cout << chksum << std::endl;
+			//std::cout << redchk << std::endl;
+			//std::cout << (chksum == redchk) << std::endl;
+			if (chksum != redchk|| *(tmpsav + 15 * 15) != cntblack - cntwhite + 1)
 			{
 				printf("\a");
 				MessageBox(wnd, _T("存档文件校验失败\n"), _T("Warning"), MB_OK);
@@ -468,7 +617,6 @@ int loadgame(int** a)
 				for (int j = 1; j <= 15; j++)
 				{
 					a[i][j] = *(tmpsav + p);
-
 					if (a[i][j] == 1)
 					{
 						setfillcolor(BLACK);
@@ -486,14 +634,14 @@ int loadgame(int** a)
 			printf("\a");
 			MessageBox(wnd, _T("存档文件读取成功\n"), _T("Warning"), MB_OK);
 			fclose(in);
-			free(in);
+			//free(in);
 			return *(tmpsav + 15 * 15);
 		}
 	}
 	return 1;
 }
 
-void getpos(int& x, int& y)
+void getpos(int &x, int &y)
 {
 	for (int i = 0; i < 15; i++)
 	{
@@ -512,7 +660,7 @@ void getpos(int& x, int& y)
 	}
 }
 
-int win(int** a) //获胜条件，1黑获胜，2白获胜，3和局
+int win(int **a) //获胜条件，1黑获胜，2白获胜，3和局
 {
 	int flag = 1;
 	for (int i = 1; i <= 15; i++)
@@ -573,16 +721,43 @@ int win(int** a) //获胜条件，1黑获胜，2白获胜，3和局
 	}
 }
 
+void privacyreq()
+{
+	HWND wnd = GetHWnd();
+	if (MessageBox(wnd, _T("本程序将根据您电脑的唯一识别码进行云存档管理，您是否同意程序获取您的主板序列号并开启云存档功能。\n您的序列号将会被执行严格的sha加密保存后立即销毁，请放心使用"), _T("Warning"), MB_YESNO | MB_ICONQUESTION) == IDYES)
+	{
+		cloudsave = true;
+		DiskId = getDiskId();
+		std::cout << "您的唯一识别码为:" << DiskId << std::endl;
+		char buff[1000];
+		_getcwd(buff, 1000);
+		for (int i = 0; i < strlen(buff); i++)
+		{
+			if (buff[i] == '\\')
+			{
+				buff[i] = '/';
+			}
+		}
+		ClientFile = buff;
+		ClientFile += "/wuziqi.sav";
+		std::cout << "当前路径是：" << ClientFile << std::endl;
+	}
+	else
+	{
+		cloudsave = false;
+	}
+	return;
+}
+
 void game()
 {
 	//申请棋盘空间
-	int** boardlay = (int**)calloc(25, sizeof(int**)); //1代表黑子 2代表白子
+	int **boardlay = (int **)calloc(25, sizeof(int **)); //1代表黑子 2代表白子
 	for (int i = 0; i <= 20; ++i)
 	{
-		*(boardlay + i) = (int*)calloc(25, sizeof(int));
+		*(boardlay + i) = (int *)calloc(25, sizeof(int));
 	}
 	//读档
-
 	int hand = loadgame(boardlay); // 黑子先落子 1黑子 2白子
 	while (1)
 	{
@@ -742,4 +917,5 @@ void board_init() //绘制原始棋盘
 	info = cord;
 	info.lfHeight = 30;
 	info.lfWidth = 11;
+	privacyreq();
 }
