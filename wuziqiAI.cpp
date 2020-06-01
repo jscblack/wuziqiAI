@@ -56,11 +56,11 @@ int ai_cal(int* chbt, char* chbm, int turn, int depth)
 		{
 			if (turn == 1)
 			{
-				pval[i] = gvaldivb(chbm, chbt, i / 15, i % 15) - 0.01 * gvaldivw(chbm, chbt, i / 15, i % 15);
+				pval[i] = ser_black(chbm, chbt, i / 15, i % 15) - 0.01 * ser_white(chbm, chbt, i / 15, i % 15);
 			}
 			else
 			{
-				pval[i] = gvaldivw(chbm, chbt, i / 15, i % 15) - 0.01 * gvaldivb(chbm, chbt, i / 15, i % 15);
+				pval[i] = ser_white(chbm, chbt, i / 15, i % 15) - 0.01 * ser_black(chbm, chbt, i / 15, i % 15);
 			}
 			pord[i] = pval + i;
 		}
@@ -112,9 +112,9 @@ int ai_cal(int* chbt, char* chbm, int turn, int depth)
 	j = pord[k] - pval;
 	p = j;
 	memcpy(tchbm, chbm, 900);
-	uchbm(chbt, tchbm, j / 15, j % 15, turn);
+	try_sol(chbt, tchbm, j / 15, j % 15, turn);
 	chbt[j] = turn;
-	v = cho(chbt, tchbm, 3 - turn, turn, depth - 1, zero);
+	v = chess_op(chbt, tchbm, 3 - turn, turn, depth - 1, zero);
 	chbt[j] = 0;
 	for (k = 1; i < 20 + step / 10 && k < 50 + step / 5; k++)
 	{
@@ -128,9 +128,9 @@ int ai_cal(int* chbt, char* chbm, int turn, int depth)
 		}
 		j = pord[k] - pval;
 		memcpy(tchbm, chbm, 900);
-		uchbm(chbt, tchbm, j / 15, j % 15, turn);
+		try_sol(chbt, tchbm, j / 15, j % 15, turn);
 		chbt[j] = turn;
-		vt = cho(chbt, tchbm, 3 - turn, turn, depth - 1, v);
+		vt = chess_op(chbt, tchbm, 3 - turn, turn, depth - 1, v);
 		chbt[j] = 0;
 		if (turn == 1)
 		{
@@ -155,7 +155,7 @@ int ai_cal(int* chbt, char* chbm, int turn, int depth)
 	return p;
 }
 //主搜索函数
-int cho(int* chbt, char* chbm, int turn, int rt, int depth, int expect)
+int chess_op(int* chbt, char* chbm, int turn, int rt, int depth, int expect)
 {
 	int* pval, i, j, k, ** pord, * pt, v, vt;
 	char* tchbm;
@@ -172,11 +172,11 @@ int cho(int* chbt, char* chbm, int turn, int rt, int depth, int expect)
 			{
 				if (turn == 1)
 				{
-					pval[i] = gvaldivb(chbm, chbt, i / 15, i % 15);
+					pval[i] = ser_black(chbm, chbt, i / 15, i % 15);
 				}
 				else
 				{
-					pval[i] = gvaldivw(chbm, chbt, i / 15, i % 15);
+					pval[i] = ser_white(chbm, chbt, i / 15, i % 15);
 				}
 				pord[i] = pval + i;
 			}
@@ -214,8 +214,8 @@ int cho(int* chbt, char* chbm, int turn, int rt, int depth, int expect)
 		j = pord[0] - pval;
 		memcpy(tchbm, chbm, 900);
 		if (**pord != zero)
-			uchbm(chbt, tchbm, j / 15, j % 15, turn);
-		v = (turn == 1) ? gvaw(tchbm) : gvab(tchbm);
+			try_sol(chbt, tchbm, j / 15, j % 15, turn);
+		v = (turn == 1) ? sco_white(tchbm) : sco_black(tchbm);
 		free(tchbm);
 		free(pval);
 		free(pord);
@@ -227,12 +227,12 @@ int cho(int* chbt, char* chbm, int turn, int rt, int depth, int expect)
 		{
 			if (turn == 1)
 			{
-				pval[i] = gvaldivb(chbm, chbt, i / 15, i % 15) - 0.02 * gvaldivw(chbm, chbt, i / 15, i % 15);
+				pval[i] = ser_black(chbm, chbt, i / 15, i % 15) - 0.02 * ser_white(chbm, chbt, i / 15, i % 15);
 				;
 			}
 			else
 			{
-				pval[i] = gvaldivw(chbm, chbt, i / 15, i % 15) - 0.02 * gvaldivb(chbm, chbt, i / 15, i % 15);
+				pval[i] = ser_white(chbm, chbt, i / 15, i % 15) - 0.02 * ser_black(chbm, chbt, i / 15, i % 15);
 			}
 			pord[i] = pval + i;
 		}
@@ -278,8 +278,8 @@ int cho(int* chbt, char* chbm, int turn, int rt, int depth, int expect)
 		j = pord[0] - pval;
 		memcpy(tchbm, chbm, 900);
 		if (**pord != zero)
-			uchbm(chbt, tchbm, j / 15, j % 15, turn);
-		v = (turn == 1) ? gvaw(tchbm) : gvab(tchbm);
+			try_sol(chbt, tchbm, j / 15, j % 15, turn);
+		v = (turn == 1) ? sco_white(tchbm) : sco_black(tchbm);
 		free(tchbm);
 		free(pval);
 		free(pord);
@@ -288,9 +288,9 @@ int cho(int* chbt, char* chbm, int turn, int rt, int depth, int expect)
 	j = pord[k] - pval;
 	memcpy(tchbm, chbm, 900);
 	if (**pord != zero)
-		uchbm(chbt, tchbm, j / 15, j % 15, turn);
+		try_sol(chbt, tchbm, j / 15, j % 15, turn);
 	chbt[j] = turn;
-	v = cho(chbt, tchbm, 3 - turn, rt, depth - 1, zero);
+	v = chess_op(chbt, tchbm, 3 - turn, rt, depth - 1, zero);
 	chbt[j] = 0;
 	for (k = 1; i < 10 + step / 16 && k < 20 + step / 8; k++)
 	{
@@ -304,9 +304,9 @@ int cho(int* chbt, char* chbm, int turn, int rt, int depth, int expect)
 		}
 		j = pord[k] - pval;
 		memcpy(tchbm, chbm, 900);
-		uchbm(chbt, tchbm, j / 15, j % 15, turn);
+		try_sol(chbt, tchbm, j / 15, j % 15, turn);
 		chbt[j] = turn;
-		vt = cho(chbt, tchbm, 3 - turn, rt, depth - 1, v);
+		vt = chess_op(chbt, tchbm, 3 - turn, rt, depth - 1, v);
 		chbt[j] = 0;
 		if (turn == 1)
 		{
@@ -341,13 +341,13 @@ void chess_add(int x, int y)
 {
 	if (x > -1 && y > -1 && x < 15 && y < 15 && (!chb[y + x * 15]))
 	{
-		uchbm(chb, chbmstep, x, y, (step - 1) % 2 + 1);
+		try_sol(chb, chbmstep, x, y, (step - 1) % 2 + 1);
 		chb[y + x * 15] = (step - 1) % 2 + 1;
 		step++;
 	}
 }
 //尝试当前解
-void uchbm(int* chbt, char* chbm, int posx, int posy, int turn)
+void try_sol(int* chbt, char* chbm, int posx, int posy, int turn)
 {
 	int i, j, x, y;
 	if (turn == 1)
@@ -838,7 +838,7 @@ void uchbm(int* chbt, char* chbm, int posx, int posy, int turn)
 	}
 }
 //黑子层搜索
-int gvaldivb(char* chbm, int* chbt, int x, int y)
+int ser_black(char* chbm, int* chbt, int x, int y)
 {
 	int v, p, mod1, mod2, mod3, mod4;
 	v = 0;
@@ -999,7 +999,7 @@ int gvaldivb(char* chbm, int* chbt, int x, int y)
 	return v;
 }
 //白子层搜索
-int gvaldivw(char* chbm, int* chbt, int x, int y)
+int ser_white(char* chbm, int* chbt, int x, int y)
 {
 	int v, p, mod1, mod2, mod3, mod4;
 	v = 0;
@@ -1160,7 +1160,7 @@ int gvaldivw(char* chbm, int* chbt, int x, int y)
 	return v;
 }
 //黑分数统计
-int gvab(char* chbm)
+int sco_black(char* chbm)
 {
 	int i, j;
 	j = 0;
@@ -1171,7 +1171,7 @@ int gvab(char* chbm)
 	return j;
 }
 //白分数统计
-int gvaw(char* chbm)
+int sco_white(char* chbm)
 {
 	int i, j;
 	j = 0;
@@ -1200,7 +1200,7 @@ LRESULT CALLBACK CBHookProcB(int nCode, WPARAM wParam, LPARAM lParam)
 	HWND hwnd = (HWND)wParam;
 	if (nCode == HCBT_ACTIVATE)
 	{
-		SetDlgItemText(hwnd, IDYES, L"智障版");
+		SetDlgItemText(hwnd, IDYES, L"幼儿版");
 		SetDlgItemText(hwnd, IDNO, L"易");
 	}
 	return 0;
@@ -1816,8 +1816,20 @@ game_start:
 			setlinecolor(BLACK);
 			setfillstyle(BS_SOLID);
 			setfillcolor(BLACK);
-			setfillcolor(BLACK);
 			fillcircle((mx - 1) * 60 + 55, (my - 1) * 60 + 55, 20);
+			//恢复棋子
+			if (step >= 3)
+			{
+				setlinestyle(PS_SOLID | PS_JOIN_BEVEL, 1);
+				setfillstyle(BS_SOLID);
+				setfillcolor(WHITE);
+				fillcircle((chess_flow[step - 3].y) * 60 + 55, (chess_flow[step - 3].x) * 60 + 55, 20);
+			}
+
+			//绘制标识符
+			setlinecolor(RED);
+			circle((mx - 1) * 60 + 55, (my - 1) * 60 + 55, 15);
+			circle((mx - 1) * 60 + 55, (my - 1) * 60 + 55, 7);
 			hand = 2;
 		}
 		else if (hand == 2) //落白子
@@ -1852,6 +1864,16 @@ game_start:
 						setfillstyle(BS_SOLID);
 						setfillcolor(WHITE);
 						fillcircle((mx - 1) * 60 + 55, (my - 1) * 60 + 55, 20);
+
+						//恢复上一个棋子
+						setlinecolor(BLACK);
+						setfillstyle(BS_SOLID);
+						setfillcolor(BLACK);
+						fillcircle((chess_flow[step - 3].y) * 60 + 55, (chess_flow[step - 3].x) * 60 + 55, 20);
+						//绘制标识符
+						setlinecolor(RED);
+						circle((mx - 1) * 60 + 55, (my - 1) * 60 + 55, 15);
+						circle((mx - 1) * 60 + 55, (my - 1) * 60 + 55, 7);
 						hand = 1;
 						break;
 					}
