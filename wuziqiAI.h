@@ -3,6 +3,78 @@
  * @Website: www.yilantingfeng.site
  * @E-mail: gehrychiang@aliyun.com
  */
+/*
+fuction help
+
+void board_init()
+Initilize the layout, some variants and required components
+
+void difficultreq()
+query difficulty
+
+void privacyreq()
+query cloud-service
+
+void game()
+main function during the game process
+
+void getpos(int& x, int& y)
+get current mouse position
+
+int loadgame(int** a)
+load saved game form local save
+
+void savegame(int2* a, bool click, int hand)
+save current game to local file and upload to the cloud(optional)
+
+int win(int** a)
+query win
+
+void gamesettlement(int** a)
+settle the current game
+
+bool quitgame(bool click)
+quit game(self kill)
+
+int uploadsav()
+upload local save to the cloud
+
+bool chkcloudsav()
+check whether there is a save on the cloud server
+
+int downloadsav()
+download uploaded save to local
+
+std::string getDiskId()
+get the id of harddisk to identify and register user
+
+std::string sha1(std::string s)
+encrypt string for safety
+
+int ai_cal(int* chbt, char* chbm, int turn, int depth)
+main entrance during the AI calculation
+
+int chess_op(int* chbt, char* chbm, int turn, int rt, int depth, int expect)
+main entrance for serching
+
+void chess_add(int x, int y)
+add a chess to the backend datebase
+
+try_sol(int* chbt, char* chbm, int posx, int posy, int turn)
+try solutions and keep the best
+
+int ser_black(char* chbm, int* chbt, int x, int y)
+serch during the round of the black
+
+int ser_white(char* chbm, int* chbt, int x, int y)
+serch during the round of the white
+
+int sco_black(char* chbm)
+get current score of the black
+
+int sco_white(char* chbm)
+get current score of the white
+*/
 #pragma once
 #include "resource.h"
 #include <stdio.h>
@@ -34,26 +106,26 @@ bool quitgame(bool click);
 void savegame(int2* a, bool click, int hand);
 int loadgame(int** a);
 void privacyreq();
-int gvab(char* chbm);
-int gvaw(char* chbm);
-int cho(int* chbt, char* chbm, int turn, int rt, int depth, int expect);
+int sco_black(char* chbm);
+int sco_white(char* chbm);
+int chess_op(int* chbt, char* chbm, int turn, int rt, int depth, int expect);
 void chess_add(int x, int y);
-void uchbm(int* chbt, char* chbm, int posx, int posy, int turn);
-int gvaldivb(char* chbm, int* chbt, int x, int y);
-int gvaldivw(char* chbm, int* chbt, int x, int y);
+void try_sol(int* chbt, char* chbm, int posx, int posy, int turn);
+int ser_black(char* chbm, int* chbt, int x, int y);
+int ser_white(char* chbm, int* chbt, int x, int y);
 int ai_cal(int* chbt, char* chbm, int turn, int depth);
-LOGFONT cord;//×ø±ê
-LOGFONT opti;//Ñ¡Ïî
-LOGFONT info;//ÐÅÏ¢À¸
+LOGFONT cord;//ï¿½ï¿½ï¿½ï¿½
+LOGFONT opti;//Ñ¡ï¿½ï¿½
+LOGFONT info;//ï¿½ï¿½Ï¢ï¿½ï¿½
 std::string DiskId;
 std::string ClientFile;
-std::string AccessKeyId = "LTAI4G9vzd4PdQJwV8tQRsKG";
-std::string AccessKeySecret = "N53YmQiN0I09wmKJt230vxinKjeOd8";
-std::string Endpoint = "oss-cn-beijing.aliyuncs.com";
-std::string BucketName = "wuziqi-sav";
+std::string AccessKeyId = "*";
+std::string AccessKeySecret = "*";
+std::string Endpoint = "*";
+std::string BucketName = "*";
 std::string ObjectName;
 bool cloudsave;
-int2 chess_flow[300];//¼ÇÂ¼¶Ô¾Ö
+int2 chess_flow[300];//ï¿½ï¿½Â¼ï¿½Ô¾ï¿½
 int difficulty;
 int chb[225];
 int step;

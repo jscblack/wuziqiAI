@@ -11,14 +11,13 @@ int main()
 	//pid started
 	board_init();
 	printf_s("Gomoku V1.1\n");
-	printf_s("Author:gehrychiang\n");
+	printf_s("Author:gehrychiang\n\n");
 	//board initilized
 	difficultreq();
 	privacyreq();
 	//game started
 	game();
 	//game ended
-
 	//system("pause");
 	return 0;
 }
@@ -1543,7 +1542,6 @@ void savegame(int2* a, bool click, int hand)
 			}
 			std::cout << "对局写入成功" << std::endl;
 			fprintf(out, "%d ", hand);	  //手
-			std::cout << chksum << std::endl;
 			chksum = sha1(chksum);
 			fprintf(out, "%s", chksum.c_str()); //校验码
 			std::cout << "校验码写入成功" << std::endl;
