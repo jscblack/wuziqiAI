@@ -10,7 +10,10 @@ int main()
 {
 	//pid started
 	board_init();
+	printf_s("Gomoku V1.1\n");
+	printf_s("Author:gehrychiang\n");
 	//board initilized
+	difficultreq();
 	privacyreq();
 	//game started
 	game();
@@ -19,296 +22,1216 @@ int main()
 	//system("pause");
 	return 0;
 }
-//ai实现
-int intpow(int a, int n)
+
+//ai实现2020.6.1
+//ai主入口
+int ai_cal(int* chbt, char* chbm, int turn, int depth)
 {
-	if (n == 0)
+	int* pval, i, j, k, ** pord, * pt, v, vt, p;
+	char* tchbm;
+	int zero;
+	if (step == 0)
 	{
-		return 1;
+		step = 1;
+		return 112;
+	}
+	if (step == 1)
+	{
+		return 112;
+	}
+	if (turn == 1)
+	{
+		zero = -10000000;
 	}
 	else
 	{
-		n--;
-		while (n--)
-		{
-			a *= a;
-		}
-		return a;
+		zero = 10000000;
 	}
+	tchbm = (char*)malloc(900);
+	pval = (int*)malloc(900);
+	pord = (int**)malloc(225 * sizeof(int*));
+	for (i = 0; i < 225; i++)
+	{
+		if (!chbt[i])
+		{
+			if (turn == 1)
+			{
+				pval[i] = gvaldivb(chbm, chbt, i / 15, i % 15) - 0.01 * gvaldivw(chbm, chbt, i / 15, i % 15);
+			}
+			else
+			{
+				pval[i] = gvaldivw(chbm, chbt, i / 15, i % 15) - 0.01 * gvaldivb(chbm, chbt, i / 15, i % 15);
+			}
+			pord[i] = pval + i;
+		}
+		else
+		{
+			pord[i] = &zero;
+		}
+	}
+	if (turn == 1)
+	{
+		for (i = 0; i < 50 + step / 5; i++)
+		{
+			for (j = i + 1; j < 225; j++)
+			{
+				if (*pord[i] < *pord[j])
+				{
+					pt = pord[i];
+					pord[i] = pord[j];
+					pord[j] = pt;
+				}
+			}
+		}
+	}
+	else
+	{
+		for (i = 0; i < 50 + step / 5; i++)
+		{
+			for (j = i + 1; j < 225; j++)
+			{
+				if (*pord[i] > * pord[j])
+				{
+					pt = pord[i];
+					pord[i] = pord[j];
+					pord[j] = pt;
+				}
+			}
+		}
+	}
+	i = 0;
+	k = 0;
+	if (*pord[k] > 600000 || *pord[k] < -600000)
+	{
+		p = pord[k] - pval;
+		free(tchbm);
+		free(pval);
+		free(pord);
+		return p;
+	}
+	j = pord[k] - pval;
+	p = j;
+	memcpy(tchbm, chbm, 900);
+	uchbm(chbt, tchbm, j / 15, j % 15, turn);
+	chbt[j] = turn;
+	v = cho(chbt, tchbm, 3 - turn, turn, depth - 1, zero);
+	chbt[j] = 0;
+	for (k = 1; i < 20 + step / 10 && k < 50 + step / 5; k++)
+	{
+		if (*pord[k] != *pord[k - 1])
+		{
+			i++;
+		}
+		if (*pord[k] == zero)
+		{
+			break;
+		}
+		j = pord[k] - pval;
+		memcpy(tchbm, chbm, 900);
+		uchbm(chbt, tchbm, j / 15, j % 15, turn);
+		chbt[j] = turn;
+		vt = cho(chbt, tchbm, 3 - turn, turn, depth - 1, v);
+		chbt[j] = 0;
+		if (turn == 1)
+		{
+			if (vt > v)
+			{
+				v = vt;
+				p = j;
+			}
+		}
+		else
+		{
+			if (vt < v)
+			{
+				v = vt;
+				p = j;
+			}
+		}
+	}
+	free(tchbm);
+	free(pval);
+	free(pord);
+	return p;
 }
-
-int overall_evaluate(int** boardlay) //对电脑而言的
+//主搜索函数
+int cho(int* chbt, char* chbm, int turn, int rt, int depth, int expect)
 {
-	//获取原棋盘布局，避免产生冲突
-	int** bod = (int**)calloc(25, sizeof(int**)); //1代表黑子 2代表白子
-	for (int i = 0; i <= 20; ++i)
+	int* pval, i, j, k, ** pord, * pt, v, vt;
+	char* tchbm;
+	int zero;
+	zero = (turn == 1) ? -10000000 : 10000000;
+	tchbm = (char*)malloc(900);
+	pval = (int*)malloc(900);
+	pord = (int**)malloc(225 * sizeof(int*));
+	if (depth < 0)
 	{
-		*(bod + i) = (int*)calloc(25, sizeof(int));
-	}
-
-	for (int i = 1; i <= 15; i++)
-	{
-		for (int j = 1; j <= 15; j++)
+		for (i = 0; i < 225; i++)
 		{
-			bod[j][i] = boardlay[i][j]; //逆置很关键
-		}
-	}
-	int aisum = 0;
-	int humsum = 0;
-	//横
-	for (int i = 1; i <= 15; i++)
-	{
-		for (int j = 1; j <= 15; j++)
-		{
-			if (bod[i][j] == 1) //黑子
+			if (!chbt[i])
 			{
-				int cnt = 0;
-				for (cnt = 0; cnt <= 16 - j; cnt++)
+				if (turn == 1)
 				{
-					if (bod[i][j + cnt] != 1)
-					{
-						break;
-					}
+					pval[i] = gvaldivb(chbm, chbt, i / 15, i % 15);
 				}
-				int pos = cnt;
-				if ((j - 1 >= 1 && bod[i][j - 1] == 2) || (j + cnt <= 15 && bod[i][j + cnt] == 2))
+				else
 				{
-					cnt--; //变死的了
+					pval[i] = gvaldivw(chbm, chbt, i / 15, i % 15);
 				}
-				else if (j == 1 || j + cnt == 16)
-				{
-					cnt--;
-				}
-				humsum += intpow(10, cnt != 0 ? cnt : 1);
-				j = j + pos - 1;
+				pord[i] = pval + i;
 			}
-			else if (bod[i][j] == 2) //白子
+			else
 			{
-				int cnt = 0;
-				for (cnt = 0; cnt <= 16 - j; cnt++)
-				{
-					if (bod[i][j + cnt] != 2)
-					{
-						break;
-					}
-				}
-				int pos = cnt;
-				if ((j - 1 >= 1 && bod[i][j - 1] == 1) || (j + cnt <= 15 && bod[i][j + cnt] == 1))
-				{
-					cnt--; //变死的了
-				}
-				else if (j == 1 || j + cnt == 16)
-				{
-					cnt--;
-				}
-				aisum += intpow(10, cnt != 0 ? cnt : 1);
-				j = j + pos - 1;
+				pord[i] = &zero;
 			}
 		}
-	}
-	//纵
-	for (int j = 1; j <= 15; j++)
-	{
-		for (int i = 1; i <= 15; i++)
+		if (turn == 1)
 		{
-			if (bod[i][j] == 1) //黑子
+			i = 0;
+			for (j = i + 1; j < 225; j++)
 			{
-				int cnt = 0;
-				for (cnt = 0; cnt <= 16 - i; cnt++)
+				if (*pord[i] < *pord[j])
 				{
-					if (bod[i + cnt][j] != 1)
-					{
-						break;
-					}
+					pt = pord[i];
+					pord[i] = pord[j];
+					pord[j] = pt;
 				}
-				int pos = cnt;
-				if ((i - 1 >= 1 && bod[i - 1][j] == 2) || (i + cnt <= 15 && bod[i + cnt][j] == 2))
-				{
-					cnt--; //变死的了
-				}
-				else if (i == 1 || i + cnt == 16)
-				{
-					cnt--;
-				}
-				if (cnt > 1)
-					humsum += intpow(10, cnt);
-				i = i + pos - 1;
 			}
-			else if (bod[i][j] == 2) //白子
+		}
+		else
+		{
+			i = 0;
+			for (j = i + 1; j < 225; j++)
 			{
-				int cnt = 0;
-				for (cnt = 0; cnt <= 16 - i; cnt++)
+				if (*pord[i] > * pord[j])
 				{
-					if (bod[i + cnt][j] != 2)
-					{
-						break;
-					}
+					pt = pord[i];
+					pord[i] = pord[j];
+					pord[j] = pt;
 				}
-				int pos = cnt;
-				if ((i - 1 >= 1 && bod[i - 1][j] == 1) || (i + cnt <= 15 && bod[i + cnt][j] == 1))
+			}
+		}
+		j = pord[0] - pval;
+		memcpy(tchbm, chbm, 900);
+		if (**pord != zero)
+			uchbm(chbt, tchbm, j / 15, j % 15, turn);
+		v = (turn == 1) ? gvaw(tchbm) : gvab(tchbm);
+		free(tchbm);
+		free(pval);
+		free(pord);
+		return v;
+	}
+	for (i = 0; i < 225; i++)
+	{
+		if (!chbt[i])
+		{
+			if (turn == 1)
+			{
+				pval[i] = gvaldivb(chbm, chbt, i / 15, i % 15) - 0.02 * gvaldivw(chbm, chbt, i / 15, i % 15);
+				;
+			}
+			else
+			{
+				pval[i] = gvaldivw(chbm, chbt, i / 15, i % 15) - 0.02 * gvaldivb(chbm, chbt, i / 15, i % 15);
+			}
+			pord[i] = pval + i;
+		}
+		else
+		{
+			pord[i] = &zero;
+		}
+	}
+	if (turn == 1)
+	{
+		for (i = 0; i < 20 + step / 5; i++)
+		{
+			for (j = i + 1; j < 225; j++)
+			{
+				if (*pord[i] < *pord[j])
 				{
-					cnt--; //变死的了
+					pt = pord[i];
+					pord[i] = pord[j];
+					pord[j] = pt;
 				}
-				else if (i == 1 || i + cnt == 16)
-				{
-					cnt--;
-				}
-				if (cnt > 1)
-					aisum += intpow(10, cnt);
-				i = i + pos - 1;
 			}
 		}
 	}
-	//左斜
-	for (int i = 1, j = 1, l = 1; i <= 15 && j <= 15; i = min(15, i + 1))
+	else
 	{
-		//起始点为i,j
-		for (int k = 0; k < l; k++)
+		for (i = 0; i < 20 + step / 5; i++)
 		{
-			if (bod[i - k][j + k] == 1) //黑子
+			for (j = i + 1; j < 225; j++)
 			{
-				int cnt = 0;
-				for (cnt = 0; cnt < l - k; cnt++)
+				if (*pord[i] > * pord[j])
 				{
-					if (bod[i - k - cnt][j + k + cnt] != 1)
-					{
-						break;
-					}
+					pt = pord[i];
+					pord[i] = pord[j];
+					pord[j] = pt;
 				}
-				int pos = cnt;
-				if ((i - k + 1 <= 15 && j + k - 1 >= 1 && bod[i - k + 1][j + k - 1] == 2) || (i - k - cnt >= 1 && j + k + cnt <= 15 && bod[i - k - cnt][j + k + cnt] == 2))
-				{
-					cnt--; //变死的了
-				}
-				else if (i - k + 1 == 16 || j + k - 1 == 0 || i - k - cnt == 0 || j + k + cnt == 16)
-				{
-					cnt--; //变死的了
-				}
-				if (cnt > 1)
-				{
-					humsum += intpow(10, cnt);
-				}
-				k = k + pos - 1;
-			}
-			else if (bod[i - k][j + k] == 2) //白子
-			{
-				int cnt = 0;
-				for (cnt = 0; cnt < l - k; cnt++)
-				{
-					if (bod[i - k - cnt][j + k + cnt] != 2)
-					{
-						break;
-					}
-				}
-				int pos = cnt;
-				if ((i - k + 1 <= 15 && j + k - 1 >= 1 && bod[i - k + 1][j + k - 1] == 1) || (i - k - cnt >= 1 && j + k + cnt <= 15 && bod[i - k - cnt][j + k + cnt] == 1))
-				{
-					cnt--; //变死的了
-				}
-				else if (i - k + 1 == 16 || j + k - 1 == 0 || i - k - cnt == 0 || j + k + cnt == 16)
-				{
-					cnt--; //变死的了
-				}
-				if (cnt > 1)
-				{
-					aisum += intpow(10, cnt);
-				}
-				k = k + pos - 1;
 			}
 		}
-		j = (i == 15 ? j + 1 : 1);
-		l = (i == 15 ? l - 1 : l + 1);
 	}
-	for (int i = 1, j = 15, l = 1; i <= 15 && j >= 1; j = max(1, j - 1))
+	i = 0;
+	k = 0;
+	if (*pord[0] > 600000 || *pord[0] < -600000)
 	{
-		//起始点为i,j
-		for (int k = 0; k < l; k++)
+		j = pord[0] - pval;
+		memcpy(tchbm, chbm, 900);
+		if (**pord != zero)
+			uchbm(chbt, tchbm, j / 15, j % 15, turn);
+		v = (turn == 1) ? gvaw(tchbm) : gvab(tchbm);
+		free(tchbm);
+		free(pval);
+		free(pord);
+		return v;
+	}
+	j = pord[k] - pval;
+	memcpy(tchbm, chbm, 900);
+	if (**pord != zero)
+		uchbm(chbt, tchbm, j / 15, j % 15, turn);
+	chbt[j] = turn;
+	v = cho(chbt, tchbm, 3 - turn, rt, depth - 1, zero);
+	chbt[j] = 0;
+	for (k = 1; i < 10 + step / 16 && k < 20 + step / 8; k++)
+	{
+		if (*pord[k] != *pord[k - 1])
 		{
-			if (bod[i + k][j + k] == 1) //黑子
+			i++;
+		}
+		if (*pord[k] == zero)
+		{
+			break;
+		}
+		j = pord[k] - pval;
+		memcpy(tchbm, chbm, 900);
+		uchbm(chbt, tchbm, j / 15, j % 15, turn);
+		chbt[j] = turn;
+		vt = cho(chbt, tchbm, 3 - turn, rt, depth - 1, v);
+		chbt[j] = 0;
+		if (turn == 1)
+		{
+			v = max(v, vt);
+			if (v >= expect)
 			{
-				int cnt = 0;
-				for (cnt = 0; cnt < l - k; cnt++)
-				{
-					if (bod[i + k + cnt][j + k + cnt] != 1)
-					{
-						break;
-					}
-				}
-				int pos = cnt;
-				if ((i + k - 1 <= 15 && j + k - 1 >= 1 && bod[i + k - 1][j + k - 1] == 2) || (i + k + cnt >= 1 && j + k + cnt <= 15 && bod[i + k + cnt][j + k + cnt] == 2))
-				{
-					cnt--; //变死的了
-				}
-				else if (i + k - 1 == 16 || j + k - 1 == 0 || i + k + cnt == 0 || j + k + cnt == 16)
-				{
-					cnt--; //变死的了
-				}
-				if (cnt > 1)
-				{
-					humsum += intpow(10, cnt);
-				}
-				k = k + pos - 1;
-			}
-			else if (bod[i + k][j + k] == 2) //白子
-			{
-				int cnt = 0;
-				for (cnt = 0; cnt < l - k; cnt++)
-				{
-					if (bod[i + k + cnt][j + k + cnt] != 2)
-					{
-						break;
-					}
-				}
-				int pos = cnt;
-				if ((i + k - 1 <= 15 && j + k - 1 >= 1 && bod[i + k - 1][j + k - 1] == 1) || (i + k + cnt >= 1 && j + k + cnt <= 15 && bod[i + k + cnt][j + k + cnt] == 1))
-				{
-					cnt--; //变死的了
-				}
-				else if (i + k - 1 == 16 || j + k - 1 == 0 || i + k + cnt == 0 || j + k + cnt == 16)
-				{
-					cnt--; //变死的了
-				}
-				if (cnt > 1)
-				{
-					aisum += intpow(10, cnt);
-				}
-				k = k + pos - 1;
+				free(tchbm);
+				free(pval);
+				free(pord);
+				return v;
 			}
 		}
-		i = (j == 1 ? i + 1 : 1);
-		l = (j == 1 ? l - 1 : l + 1);
+		else
+		{
+			v = min(v, vt);
+			if (v <= expect)
+			{
+				free(tchbm);
+				free(pval);
+				free(pord);
+				return v;
+			}
+		}
 	}
-	return aisum - humsum;
+	free(tchbm);
+	free(pval);
+	free(pord);
+	return v;
 }
-
-void ai(int** boardlay, int& tarx, int& tary)
+//棋子加入，更新棋盘布局
+void chess_add(int x, int y)
 {
-	//获取原棋盘布局，避免产生冲突
-	int** bod = (int**)calloc(25, sizeof(int**)); //1代表黑子 2代表白子
-	for (int i = 0; i <= 20; ++i)
+	if (x > -1 && y > -1 && x < 15 && y < 15 && (!chb[y + x * 15]))
 	{
-		*(bod + i) = (int*)calloc(25, sizeof(int));
-	}
-
-	for (int i = 1; i <= 15; i++)
-	{
-		for (int j = 1; j <= 15; j++)
-		{
-			bod[i][j] = boardlay[i][j];
-		}
+		uchbm(chb, chbmstep, x, y, (step - 1) % 2 + 1);
+		chb[y + x * 15] = (step - 1) % 2 + 1;
+		step++;
 	}
 }
+//尝试当前解
+void uchbm(int* chbt, char* chbm, int posx, int posy, int turn)
+{
+	int i, j, x, y;
+	if (turn == 1)
+	{
+		i = 0;
+		j = 3;
+		x = posx + 1;
+		y = posy + 0;
+		while (x < 15 && chbt[x * 15 + y] == 2)
+		{
+			chbm[x * 60 + y * 4 + 0]--;
+			x += 1;
+			y += 0;
+		}
+		x = posx - 1;
+		y = posy - 0;
+		while (x > -1 && chbt[x * 15 + y] == 2)
+		{
+			chbm[x * 60 + y * 4 + 0]--;
+			x -= 1;
+			y -= 0;
+		}
+		x = posx + 1;
+		y = posy + 0;
+		while (x < 15 && chbt[x * 15 + y] == 1)
+		{
+			i++;
+			x += 1;
+			y += 0;
+		}
+		if (x == 15 || chbt[x * 15 + y] == 2)
+		{
+			j--;
+		}
+		x = posx - 1;
+		y = posy - 0;
+		while (x > -1 && chbt[x * 15 + y] == 1)
+		{
+			i++;
+			x -= 1;
+			y -= 0;
+		}
+		if (x == -1 || chbt[x * 15 + y] == 2)
+		{
+			j--;
+		}
+		i = min(i, 4) * 3 + j;
+		x = posx + 1;
+		y = posy + 0;
+		while (x < 15 && chbt[x * 15 + y] == 1)
+		{
+			chbm[x * 60 + y * 4 + 0] = i;
+			x += 1;
+			y += 0;
+		}
+		x = posx - 1;
+		y = posy - 0;
+		while (x > 0 && chbt[x * 15 + y] == 1)
+		{
+			chbm[x * 60 + y * 4 + 0] = i;
+			x -= 1;
+			y -= 0;
+		}
+		chbm[posx * 60 + posy * 4 + 0] = i;
+		i = 0;
+		j = 3;
+		x = posx + 1;
+		y = posy + -1;
+		while (x < 15 && y > -1 && chbt[x * 15 + y] == 2)
+		{
+			chbm[x * 60 + y * 4 + 1]--;
+			x += 1;
+			y += -1;
+		}
+		x = posx - 1;
+		y = posy - -1;
+		while (x > -1 && y < 15 && chbt[x * 15 + y] == 2)
+		{
+			chbm[x * 60 + y * 4 + 1]--;
+			x -= 1;
+			y -= -1;
+		}
+		x = posx + 1;
+		y = posy + -1;
+		while (x < 15 && y > -1 && chbt[x * 15 + y] == 1)
+		{
+			i++;
+			x += 1;
+			y += -1;
+		}
+		if (x == 15 || y == -1 || chbt[x * 15 + y] == 2)
+		{
+			j--;
+		}
+		x = posx - 1;
+		y = posy - -1;
+		while (x > -1 && y < 15 && chbt[x * 15 + y] == 1)
+		{
+			i++;
+			x -= 1;
+			y -= -1;
+		}
+		if (x == -1 || y == 15 || chbt[x * 15 + y] == 2)
+		{
+			j--;
+		}
+		i = min(i, 4) * 3 + j;
+		x = posx + 1;
+		y = posy + -1;
+		while (x < 15 && y > -1 && chbt[x * 15 + y] == 1)
+		{
+			chbm[x * 60 + y * 4 + 1] = i;
+			x += 1;
+			y += -1;
+		}
+		x = posx - 1;
+		y = posy - -1;
+		while (x > -1 && y < 15 && chbt[x * 15 + y] == 1)
+		{
+			chbm[x * 60 + y * 4 + 1] = i;
+			x -= 1;
+			y -= -1;
+		}
+		chbm[posx * 60 + posy * 4 + 1] = i;
+		i = 0;
+		j = 3;
+		x = posx + 0;
+		y = posy + -1;
+		while (y > -1 && chbt[x * 15 + y] == 2)
+		{
+			chbm[x * 60 + y * 4 + 2]--;
+			x += 0;
+			y += -1;
+		}
+		x = posx - 0;
+		y = posy - -1;
+		while (y < 15 && chbt[x * 15 + y] == 2)
+		{
+			chbm[x * 60 + y * 4 + 2]--;
+			x -= 0;
+			y -= -1;
+		}
+		x = posx + 0;
+		y = posy + -1;
+		while (y > -1 && chbt[x * 15 + y] == 1)
+		{
+			i++;
+			x += 0;
+			y += -1;
+		}
+		if (y == -1 || chbt[x * 15 + y] == 2)
+		{
+			j--;
+		}
+		x = posx - 0;
+		y = posy - -1;
+		while (y < 15 && chbt[x * 15 + y] == 1)
+		{
+			i++;
+			x -= 0;
+			y -= -1;
+		}
+		if (y == 15 || chbt[x * 15 + y] == 2)
+		{
+			j--;
+		}
+		i = min(i, 4) * 3 + j;
+		x = posx + 0;
+		y = posy + -1;
+		while (y > -1 && chbt[x * 15 + y] == 1)
+		{
+			chbm[x * 60 + y * 4 + 2] = i;
+			x += 0;
+			y += -1;
+		}
+		x = posx - 0;
+		y = posy - -1;
+		while (y < 15 && chbt[x * 15 + y] == 1)
+		{
+			chbm[x * 60 + y * 4 + 2] = i;
+			x -= 0;
+			y -= -1;
+		}
+		chbm[posx * 60 + posy * 4 + 2] = i;
+		i = 0;
+		j = 3;
+		x = posx + -1;
+		y = posy + -1;
+		while (x > -1 && y > -1 && chbt[x * 15 + y] == 2)
+		{
+			chbm[x * 60 + y * 4 + 3]--;
+			x += -1;
+			y += -1;
+		}
+		x = posx - -1;
+		y = posy - -1;
+		while (x < 15 && y < 15 && chbt[x * 15 + y] == 2)
+		{
+			chbm[x * 60 + y * 4 + 3]--;
+			x -= -1;
+			y -= -1;
+		}
+		x = posx + -1;
+		y = posy + -1;
+		while (x > -1 && y > -1 && chbt[x * 15 + y] == 1)
+		{
+			i++;
+			x += -1;
+			y += -1;
+		}
+		if (x == -1 || y == -1 || chbt[x * 15 + y] == 2)
+		{
+			j--;
+		}
+		x = posx - -1;
+		y = posy - -1;
+		while (x < 15 && y < 15 && x < 15 && y < 15 && chbt[x * 15 + y] == 1)
+		{
+			i++;
+			x -= -1;
+			y -= -1;
+		}
+		if (x == 15 || y == 15 || chbt[x * 15 + y] == 2)
+		{
+			j--;
+		}
+		i = min(i, 4) * 3 + j;
+		x = posx + -1;
+		y = posy + -1;
+		while (x > -1 && y > -1 && chbt[x * 15 + y] == 1)
+		{
+			chbm[x * 60 + y * 4 + 3] = i;
+			x += -1;
+			y += -1;
+		}
+		x = posx - -1;
+		y = posy - -1;
+		while (x < 15 && y < 15 && chbt[x * 15 + y] == 1)
+		{
+			chbm[x * 60 + y * 4 + 3] = i;
+			x -= -1;
+			y -= -1;
+		}
+		chbm[posx * 60 + posy * 4 + 3] = i;
+	}
+	else
+	{
+		i = 0;
+		j = 18;
+		x = posx + 1;
+		y = posy + 0;
+		while (x < 15 && chbt[x * 15 + y] == 1)
+		{
+			chbm[x * 60 + y * 4 + 0]--;
+			x += 1;
+			y += 0;
+		}
+		x = posx - 1;
+		y = posy - 0;
+		while (x > -1 && chbt[x * 15 + y] == 1)
+		{
+			chbm[x * 60 + y * 4 + 0]--;
+			x -= 1;
+			y -= 0;
+		}
+		x = posx + 1;
+		y = posy + 0;
+		while (x < 15 && chbt[x * 15 + y] == 2)
+		{
+			i++;
+			x += 1;
+			y += 0;
+		}
+		if (x == 15 || chbt[x * 15 + y] == 1)
+		{
+			j--;
+		}
+		x = posx - 1;
+		y = posy - 0;
+		while (x > -1 && chbt[x * 15 + y] == 2)
+		{
+			i++;
+			x -= 1;
+			y -= 0;
+		}
+		if (x == -1 || chbt[x * 15 + y] == 1)
+		{
+			j--;
+		}
+		i = min(i, 4) * 3 + j;
+		x = posx + 1;
+		y = posy + 0;
+		while (x < 15 && chbt[x * 15 + y] == 2)
+		{
+			chbm[x * 60 + y * 4 + 0] = i;
+			x += 1;
+			y += 0;
+		}
+		x = posx - 1;
+		y = posy - 0;
+		while (x > -1 && chbt[x * 15 + y] == 2)
+		{
+			chbm[x * 60 + y * 4 + 0] = i;
+			x -= 1;
+			y -= 0;
+		}
+		chbm[posx * 60 + posy * 4 + 0] = i;
+		i = 0;
+		j = 18;
+		x = posx + 1;
+		y = posy + -1;
+		while (x < 15 && y > -1 && chbt[x * 15 + y] == 1)
+		{
+			chbm[x * 60 + y * 4 + 1]--;
+			x += 1;
+			y += -1;
+		}
+		x = posx - 1;
+		y = posy - -1;
+		while (x > -1 && y < 15 && chbt[x * 15 + y] == 1)
+		{
+			chbm[x * 60 + y * 4 + 1]--;
+			x -= 1;
+			y -= -1;
+		}
+		x = posx + 1;
+		y = posy + -1;
+		while (x < 15 && y > -1 && chbt[x * 15 + y] == 2)
+		{
+			i++;
+			x += 1;
+			y += -1;
+		}
+		if (x == 15 || y == -1 || chbt[x * 15 + y] == 1)
+		{
+			j--;
+		}
+		x = posx - 1;
+		y = posy - -1;
+		while (x > -1 && y < 15 && chbt[x * 15 + y] == 2)
+		{
+			i++;
+			x -= 1;
+			y -= -1;
+		}
+		if (x == -1 || y == 15 || chbt[x * 15 + y] == 1)
+		{
+			j--;
+		}
+		i = min(i, 4) * 3 + j;
+		x = posx + 1;
+		y = posy + -1;
+		while (x < 15 && y > -1 && chbt[x * 15 + y] == 2)
+		{
+			chbm[x * 60 + y * 4 + 1] = i;
+			x += 1;
+			y += -1;
+		}
+		x = posx - 1;
+		y = posy - -1;
+		while (x > -1 && y < 15 && chbt[x * 15 + y] == 2)
+		{
+			chbm[x * 60 + y * 4 + 1] = i;
+			x -= 1;
+			y -= -1;
+		}
+		chbm[posx * 60 + posy * 4 + 1] = i;
+		i = 0;
+		j = 18;
+		x = posx + 0;
+		y = posy + -1;
+		while (y > -1 && chbt[x * 15 + y] == 1)
+		{
+			chbm[x * 60 + y * 4 + 2]--;
+			x += 0;
+			y += -1;
+		}
+		x = posx - 0;
+		y = posy - -1;
+		while (y < 15 && chbt[x * 15 + y] == 1)
+		{
+			chbm[x * 60 + y * 4 + 2]--;
+			x -= 0;
+			y -= -1;
+		}
+		x = posx + 0;
+		y = posy + -1;
+		while (y > -1 && chbt[x * 15 + y] == 2)
+		{
+			i++;
+			x += 0;
+			y += -1;
+		}
+		if (y == -1 || chbt[x * 15 + y] == 1)
+		{
+			j--;
+		}
+		x = posx - 0;
+		y = posy - -1;
+		while (y < 15 && chbt[x * 15 + y] == 2)
+		{
+			i++;
+			x -= 0;
+			y -= -1;
+		}
+		if (y == 15 || chbt[x * 15 + y] == 1)
+		{
+			j--;
+		}
+		i = min(i, 4) * 3 + j;
+		x = posx + 0;
+		y = posy + -1;
+		while (y > -1 && chbt[x * 15 + y] == 2)
+		{
+			chbm[x * 60 + y * 4 + 2] = i;
+			x += 0;
+			y += -1;
+		}
+		x = posx - 0;
+		y = posy - -1;
+		while (y < 15 && chbt[x * 15 + y] == 2)
+		{
+			chbm[x * 60 + y * 4 + 2] = i;
+			x -= 0;
+			y -= -1;
+		}
+		chbm[posx * 60 + posy * 4 + 2] = i;
+		i = 0;
+		j = 18;
+		x = posx + -1;
+		y = posy + -1;
+		while (x > -1 && y > -1 && chbt[x * 15 + y] == 1)
+		{
+			chbm[x * 60 + y * 4 + 3]--;
+			x += -1;
+			y += -1;
+		}
+		x = posx - -1;
+		y = posy - -1;
+		while (x < 15 && y < 15 && chbt[x * 15 + y] == 1)
+		{
+			chbm[x * 60 + y * 4 + 3]--;
+			x -= -1;
+			y -= -1;
+		}
+		x = posx + -1;
+		y = posy + -1;
+		while (x > -1 && y > -1 && chbt[x * 15 + y] == 2)
+		{
+			i++;
+			x += -1;
+			y += -1;
+		}
+		if (x == -1 || y == -1 || chbt[x * 15 + y] == 1)
+		{
+			j--;
+		}
+		x = posx - -1;
+		y = posy - -1;
+		while (x < 15 && y < 15 && chbt[x * 15 + y] == 2)
+		{
+			i++;
+			x -= -1;
+			y -= -1;
+		}
+		if (x == 15 || y == 15 || chbt[x * 15 + y] == 1)
+		{
+			j--;
+		}
+		i = min(i, 4) * 3 + j;
+		x = posx + -1;
+		y = posy + -1;
+		while (x > -1 && y > -1 && chbt[x * 15 + y] == 2)
+		{
+			chbm[x * 60 + y * 4 + 3] = i;
+			x += -1;
+			y += -1;
+		}
+		x = posx - -1;
+		y = posy - -1;
+		while (x < 15 && y < 15 && chbt[x * 15 + y] == 2)
+		{
+			chbm[x * 60 + y * 4 + 3] = i;
+			x -= -1;
+			y -= -1;
+		}
+		chbm[posx * 60 + posy * 4 + 3] = i;
+	}
+}
+//黑子层搜索
+int gvaldivb(char* chbm, int* chbt, int x, int y)
+{
+	int v, p, mod1, mod2, mod3, mod4;
+	v = 0;
+	p = 15 * x + y;
+	mod1 = 3;
+	mod2 = 3;
+	mod3 = 3;
+	mod4 = 3;
+	if (x < 14)
+	{
+		if (chbt[p + 15] == 2)
+		{
+			v += valmapba[chbm[p * 4 + 60] - 1] - valmapba[chbm[p * 4 + 60]];
+			mod1--;
+		}
+		if (chbt[p + 15] == 1)
+		{
+			v -= valmapba[chbm[p * 4 + 60]];
+			mod1 += chbm[p * 4 + 60];
+		}
+		if (y < 14)
+		{
+			if (chbt[p + 16] == 2)
+			{
+				v += valmapba[chbm[p * 4 + 67] - 1] - valmapba[chbm[p * 4 + 67]];
+				mod4--;
+			}
+			if (chbt[p + 16] == 1)
+			{
+				v -= valmapba[chbm[p * 4 + 67]];
+				mod4 += chbm[p * 4 + 67];
+			}
+		}
+		else
+		{
+			mod4--;
+		}
+		if (y > 0)
+		{
+			if (chbt[p + 14] == 2)
+			{
+				v += valmapba[chbm[p * 4 + 57] - 1] - valmapba[chbm[p * 4 + 57]];
+				mod2--;
+			}
+			if (chbt[p + 14] == 1)
+			{
+				v -= valmapba[chbm[p * 4 + 57]];
+				mod2 += chbm[p * 4 + 57];
+			}
+		}
+		else
+		{
+			mod2--;
+		}
+	}
+	else
+	{
+		mod1--;
+		mod2--;
+		mod4--;
+	}
+	if (x > 0)
+	{
+		if (chbt[p - 15] == 2)
+		{
+			v += valmapba[chbm[p * 4 - 60] - 1] - valmapba[chbm[p * 4 - 60]];
+			mod1--;
+		}
+		if (chbt[p - 15] == 1)
+		{
+			v -= valmapba[chbm[p * 4 - 60]];
+			mod1 += chbm[p * 4 - 60];
+		}
+		if (y > 0)
+		{
+			if (chbt[p - 16] == 2)
+			{
+				v += valmapba[chbm[p * 4 - 61] - 1] - valmapba[chbm[p * 4 - 61]];
+				mod4--;
+			}
+			if (chbt[p - 16] == 1)
+			{
+				v -= valmapba[chbm[p * 4 - 61]];
+				mod4 += chbm[p * 4 - 61];
+			}
+		}
+		else
+		{
+			mod4--;
+		}
+		if (y < 14)
+		{
+			if (chbt[p - 14] == 2)
+			{
+				v += valmapba[chbm[p * 4 - 55] - 1] - valmapba[chbm[p * 4 - 55]];
+				mod2--;
+			}
+			if (chbt[p - 14] == 1)
+			{
+				v -= valmapba[chbm[p * 4 - 55]];
+				mod2 += chbm[p * 4 - 55];
+			}
+		}
+		else
+		{
+			mod2--;
+		}
+	}
+	else
+	{
+		mod1--;
+		mod2--;
+		mod4--;
+	}
+	if (y > 0)
+	{
+		if (chbt[p - 1] == 2)
+		{
+			v += valmapba[chbm[p * 4 - 2] - 1] - valmapba[chbm[p * 4 - 2]];
+			mod3--;
+		}
+		if (chbt[p - 1] == 1)
+		{
+			v -= valmapba[chbm[p * 4 - 2]];
+			mod3 += chbm[p * 4 - 2];
+		}
+	}
+	else
+	{
+		mod3--;
+	}
+	if (y < 14)
+	{
+		if (chbt[p + 1] == 2)
+		{
+			v += valmapba[chbm[p * 4 + 6] - 1] - valmapba[chbm[p * 4 + 6]];
+			mod3--;
+		}
+		if (chbt[p + 1] == 1)
+		{
+			v -= valmapba[chbm[p * 4 + 6]];
+			mod3 += chbm[p * 4 + 6];
+		}
+	}
+	else
+	{
+		mod3--;
+	}
+	while (mod1 > 15)
+		mod1 -= 3;
+	while (mod2 > 15)
+		mod2 -= 3;
+	while (mod3 > 15)
+		mod3 -= 3;
+	while (mod4 > 15)
+		mod4 -= 3;
+	v += valmapba[mod1] + valmapba[mod2] + valmapba[mod3] + valmapba[mod4];
+	return v;
+}
+//白子层搜索
+int gvaldivw(char* chbm, int* chbt, int x, int y)
+{
+	int v, p, mod1, mod2, mod3, mod4;
+	v = 0;
+	p = 15 * x + y;
+	mod1 = 18;
+	mod2 = 18;
+	mod3 = 18;
+	mod4 = 18;
+	if (x < 14)
+	{
+		if (chbt[p + 15] == 1)
+		{
+			v += valmapwa[chbm[p * 4 + 60] - 1] - valmapwa[chbm[p * 4 + 60]];
+			mod1--;
+		}
+		if (chbt[p + 15] == 2)
+		{
+			v -= valmapwa[chbm[p * 4 + 60]];
+			mod1 += chbm[p * 4 + 60] - 15;
+		}
+		if (y < 14)
+		{
+			if (chbt[p + 16] == 1)
+			{
+				v += valmapwa[chbm[p * 4 + 67] - 1] - valmapwa[chbm[p * 4 + 67]];
+				mod4--;
+			}
+			if (chbt[p + 16] == 2)
+			{
+				v -= valmapwa[chbm[p * 4 + 67]];
+				mod4 += chbm[p * 4 + 67] - 15;
+			}
+		}
+		else
+		{
+			mod4--;
+		}
+		if (y > 0)
+		{
+			if (chbt[p + 14] == 1)
+			{
+				v += valmapwa[chbm[p * 4 + 57] - 1] - valmapwa[chbm[p * 4 + 57]];
+				mod2--;
+			}
+			if (chbt[p + 14] == 2)
+			{
+				v -= valmapwa[chbm[p * 4 + 57]];
+				mod2 += chbm[p * 4 + 57] - 15;
+			}
+		}
+		else
+		{
+			mod2--;
+		}
+	}
+	else
+	{
+		mod1--;
+		mod2--;
+		mod4--;
+	}
+	if (x > 0)
+	{
+		if (chbt[p - 15] == 1)
+		{
+			v += valmapwa[chbm[p * 4 - 60] - 1] - valmapwa[chbm[p * 4 - 60]];
+			mod1--;
+		}
+		if (chbt[p - 15] == 2)
+		{
+			v -= valmapwa[chbm[p * 4 - 60]];
+			mod1 += chbm[p * 4 - 60] - 15;
+		}
+		if (y > 0)
+		{
+			if (chbt[p - 16] == 1)
+			{
+				v += valmapwa[chbm[p * 4 - 61] - 1] - valmapwa[chbm[p * 4 - 61]];
+				mod4--;
+			}
+			if (chbt[p - 16] == 2)
+			{
+				v -= valmapwa[chbm[p * 4 - 61]];
+				mod4 += chbm[p * 4 - 61] - 15;
+			}
+		}
+		else
+		{
+			mod4--;
+		}
+		if (y < 14)
+		{
+			if (chbt[p - 14] == 1)
+			{
+				v += valmapwa[chbm[p * 4 - 55] - 1] - valmapwa[chbm[p * 4 - 55]];
+				mod2--;
+			}
+			if (chbt[p - 14] == 2)
+			{
+				v -= valmapwa[chbm[p * 4 - 55]];
+				mod2 += chbm[p * 4 - 55] - 15;
+			}
+		}
+		else
+		{
+			mod2--;
+		}
+	}
+	else
+	{
+		mod1--;
+		mod2--;
+		mod4--;
+	}
+	if (y > 0)
+	{
+		if (chbt[p - 1] == 1)
+		{
+			v += valmapwa[chbm[p * 4 - 2] - 1] - valmapwa[chbm[p * 4 - 2]];
+			mod3--;
+		}
+		if (chbt[p - 1] == 2)
+		{
+			v -= valmapwa[chbm[p * 4 - 2]];
+			mod3 += chbm[p * 4 - 2] - 15;
+		}
+	}
+	else
+	{
+		mod3--;
+	}
+	if (y < 14)
+	{
+		if (chbt[p + 1] == 1)
+		{
+			v += valmapwa[chbm[p * 4 + 6] - 1] - valmapwa[chbm[p * 4 + 6]];
+			mod3--;
+		}
+		if (chbt[p + 1] == 2)
+		{
+			v -= valmapwa[chbm[p * 4 + 6]];
+			mod3 += chbm[p * 4 + 6] - 15;
+		}
+	}
+	else
+	{
+		mod3--;
+	}
+	while (mod1 > 30)
+		mod1 -= 3;
+	while (mod2 > 30)
+		mod2 -= 3;
+	while (mod3 > 30)
+		mod3 -= 3;
+	while (mod4 > 30)
+		mod4 -= 3;
+	v += valmapwa[mod1] + valmapwa[mod2] + valmapwa[mod3] + valmapwa[mod4];
+	return v;
+}
+//黑分数统计
+int gvab(char* chbm)
+{
+	int i, j;
+	j = 0;
+	for (i = 0; i < 900; i++)
+	{
+		j += valmapb[chbm[i]];
+	}
+	return j;
+}
+//白分数统计
+int gvaw(char* chbm)
+{
+	int i, j;
+	j = 0;
+	for (i = 0; i < 900; i++)
+	{
+		j += valmapw[chbm[i]];
+	}
+	return j;
+}
+//
 
 //gui和逻辑已经构建完成2020.5.9
-//bug基本修复
+//弹框实现
+LRESULT CALLBACK CBHookProcA(int nCode, WPARAM wParam, LPARAM lParam)
+{
+	HWND hwnd = (HWND)wParam;
+	if (nCode == HCBT_ACTIVATE)
+	{
+		SetDlgItemText(hwnd, IDYES, L"易");
+		SetDlgItemText(hwnd, IDNO, L"难");
+	}
+	return 0;
+}
+LRESULT CALLBACK CBHookProcB(int nCode, WPARAM wParam, LPARAM lParam)
+{
+	HWND hwnd = (HWND)wParam;
+	if (nCode == HCBT_ACTIVATE)
+	{
+		SetDlgItemText(hwnd, IDYES, L"智障版");
+		SetDlgItemText(hwnd, IDNO, L"易");
+	}
+	return 0;
+}
+int MyMessageBoxA(HWND hwnd, const TCHAR* szText, const TCHAR* szCaption, UINT uType)
+{
+	int ret;
+	HHOOK hHook = SetWindowsHookEx(WH_CBT, CBHookProcA, nullptr, GetCurrentThreadId());
+	ret = MessageBoxEx(hwnd, szText, szCaption, uType, MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US));
+	UnhookWindowsHookEx(hHook);
+	return ret;
+}
+int MyMessageBoxB(HWND hwnd, const TCHAR* szText, const TCHAR* szCaption, UINT uType)
+{
+	int ret;
+	HHOOK hHook = SetWindowsHookEx(WH_CBT, CBHookProcB, nullptr, GetCurrentThreadId());
+	ret = MessageBoxEx(hwnd, szText, szCaption, uType, MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US));
+	UnhookWindowsHookEx(hHook);
+	return ret;
+}
+//
+
+//存档加密实现
 std::string sha1(std::string s)
 {
 	const char HEX_CHAR[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
 	const unsigned int K[] = { 0x5A827999, 0x6ED9EBA1, 0x8F1BBCDC, 0xCA62C1D6 };
 	//扩展成K*512位
 	unsigned int l;
-	l = s.length() * 8;
-	unsigned int* data = (unsigned int*)calloc(sizeof(unsigned int), ((l / 512) + 1) * 512);
+	l = (unsigned int)s.length() * 8;
+	unsigned int* data = (unsigned int*)calloc(sizeof(unsigned int), ((l / 512U) + 1U) * 512U);
 	for (unsigned int i = 0; i < s.length(); ++i)
 	{
 		data[i / 4] |= (s[i] << (unsigned int)8 * (3 - (i % 4)));
@@ -384,7 +1307,9 @@ std::string sha1(std::string s)
 	}
 	return buf;
 }
+//
 
+//唯一标识存档实现
 std::string exe_cmd(const char* cmd)
 {
 	char buffer[128] = { 0 };
@@ -404,19 +1329,19 @@ std::string exe_cmd(const char* cmd)
 	result = result.erase(0, 12);
 	return result;
 }
-
 std::string getDiskId()
 {
 	std::string disc = exe_cmd("wmic BaseBoard get serialnumber");
 	disc = sha1(disc);
 	return disc;
 }
+//
 
+//云存档实现
 void ProgressCallback(size_t increment, int64_t transfered, int64_t total, void* userData)
 {
 	std::cout << "ProgressCallback[" << userData << "] => " << increment << " ," << transfered << "," << total << std::endl;
 }
-
 int uploadsav()
 {
 	using namespace AlibabaCloud::OSS;
@@ -463,7 +1388,6 @@ int uploadsav()
 		<< "\n";
 	return 0;
 }
-
 bool chkcloudsav()
 {
 	using namespace AlibabaCloud::OSS;
@@ -500,7 +1424,6 @@ bool chkcloudsav()
 	ShutdownSdk();
 	return 0;
 }
-
 int downloadsav()
 {
 	using namespace AlibabaCloud::OSS;
@@ -541,7 +1464,9 @@ int downloadsav()
 		<< "\n";
 	return 0;
 }
+//
 
+//对局核心函数
 void gamesettlement(int** a)
 {
 	LOGFONT win_font = cord;
@@ -581,7 +1506,6 @@ void gamesettlement(int** a)
 	MessageBox(wnd, _T("游戏结束\n"), _T("Warning"), MB_OK);
 	return;
 }
-
 bool quitgame(bool click)
 {
 	if (click)
@@ -599,8 +1523,7 @@ bool quitgame(bool click)
 	}
 	return 0;
 }
-
-void savegame(int** a, bool click, int hand)
+void savegame(int2* a, bool click, int hand)
 {
 	if (click)
 	{
@@ -611,16 +1534,16 @@ void savegame(int** a, bool click, int hand)
 			FILE* out;
 			fopen_s(&out, "wuziqi.sav", "w");
 			std::string chksum;
-			for (int i = 1; i <= 15; i++)
+			fprintf(out, "%d ", step);
+			for (int i = 0; i < step - 1; i++)
 			{
-				for (int j = 1; j <= 15; j++)
-				{
-					fprintf(out, "%d ", a[i][j]);
-					chksum += char(a[i][j] + '0');
-				}
+				fprintf(out, "%d %d ", a[i].x, a[i].y);
+				chksum += std::to_string(a[i].x);
+				chksum += std::to_string(a[i].y);
 			}
-			std::cout << "存档保存成功" << std::endl;
+			std::cout << "对局写入成功" << std::endl;
 			fprintf(out, "%d ", hand);	  //手
+			std::cout << chksum << std::endl;
 			chksum = sha1(chksum);
 			fprintf(out, "%s", chksum.c_str()); //校验码
 			std::cout << "校验码写入成功" << std::endl;
@@ -645,11 +1568,10 @@ void savegame(int** a, bool click, int hand)
 	}
 	return;
 }
-
 int loadgame(int** a)
 {
 	HWND wnd = GetHWnd();
-	if (!_access("wuziqi.sav", 0)) //
+	if (!_access("wuziqi.sav", 0))
 	{
 		printf("\a");
 		if (MessageBox(wnd, _T("检测到存档，是否读取？\n"), _T("Warning"), MB_YESNO | MB_ICONQUESTION) == IDYES)
@@ -657,42 +1579,63 @@ int loadgame(int** a)
 			std::cout << "正在读取存档" << std::endl;
 			FILE* in;
 			fopen_s(&in, "wuziqi.sav", "r");
-			int* tmpsav = (int*)calloc(300, sizeof(int)); //存档读取缓冲
 			std::string redchk;
 			redchk.resize(40);
 			std::string chksum;
-			int cntblack = 0;
-			int cntwhite = 0;
-			for (int i = 0; i < 15 * 15 + 1; i++)
+			int len = 0;
+			int uio;
+			fscanf_s(in, "%d", &len);
+			for (int i = 0; i < len - 1; i++)
 			{
-				fscanf_s(in, "%d", tmpsav + i);
-				if (i < 15 * 15)
-				{
-					if (*(tmpsav + i) == 1)
-					{
-						cntblack++;
-					}
-					else if (*(tmpsav + i) == 2)
-					{
-						cntwhite++;
-					}
-					chksum += char(*(tmpsav + i) + '0');
-				}
+				fscanf_s(in, "%d %d", &chess_flow[i].x, &chess_flow[i].y);
+				printf("%d %d\n", chess_flow[i].x, chess_flow[i].y);
+				chksum += std::to_string(chess_flow[i].x);
+				chksum += std::to_string(chess_flow[i].y);
 			}
+
+			fscanf_s(in, "%d", &uio);
 			std::cout << "存档读取成功" << std::endl;
 			chksum = sha1(chksum);
 			fscanf_s(in, "%s", &redchk[0], 50);
-			//std::cout << chksum << std::endl;
-			//std::cout << redchk << std::endl;
-			//std::cout << (chksum == redchk) << std::endl;
-			if (chksum != redchk || *(tmpsav + 15 * 15) != cntblack - cntwhite + 1)
+			std::cout << chksum << std::endl;
+			std::cout << redchk << std::endl;
+			std::cout << (chksum == redchk) << std::endl;
+			if (chksum != redchk)
 			{
 				std::cout << "存档校验失败" << std::endl;
 				printf("\a");
 				MessageBox(wnd, _T("存档文件校验失败\n"), _T("Warning"), MB_OK);
+				for (int i = 0; i < 300; i++)
+				{
+					chess_flow[i].x = 0;
+					chess_flow[i].y = 0;
+				}
+				for (int i = 1; i <= 15; i++)
+				{
+					for (int j = 1; j <= 15; j++)
+					{
+						a[i][j] = 0;
+					}
+				}
+				for (int i = 0; i < 225; i++)
+				{
+					chb[i] = 0;
+				}
+				for (int i = 0; i < 900; i++)
+				{
+					chbmstep[i] = 0;
+				}
+				step = 1;
+				fclose(in);
 				return 1;
 			}
 			std::cout << "存档校验成功" << std::endl;
+			for (int i = 0; i < len - 1; i++)
+			{
+				chess_add(chess_flow[i].x, chess_flow[i].y);
+				a[chess_flow[i].y + 1][chess_flow[i].x + 1] = i % 2 + 1;
+			}
+			printf("debug:%d %d\n", step, len);
 			int p = 0;
 			setlinecolor(BLACK);
 			setfillstyle(BS_SOLID);
@@ -700,7 +1643,6 @@ int loadgame(int** a)
 			{
 				for (int j = 1; j <= 15; j++)
 				{
-					a[i][j] = *(tmpsav + p);
 					if (a[i][j] == 1)
 					{
 						setfillcolor(BLACK);
@@ -719,12 +1661,11 @@ int loadgame(int** a)
 			MessageBox(wnd, _T("存档文件读取成功\n"), _T("Warning"), MB_OK);
 			fclose(in);
 			//free(in);
-			return *(tmpsav + 15 * 15);
+			return uio;
 		}
 	}
 	return 1;
 }
-
 void getpos(int& x, int& y)
 {
 	for (int i = 0; i < 15; i++)
@@ -743,7 +1684,6 @@ void getpos(int& x, int& y)
 		}
 	}
 }
-
 int win(int** a) //获胜条件，1黑获胜，2白获胜，3和局
 {
 	int flag = 1;
@@ -804,7 +1744,158 @@ int win(int** a) //获胜条件，1黑获胜，2白获胜，3和局
 		return 0;
 	}
 }
+void game()
+{
+	//申请棋盘空间
+	int** boardlay = (int**)calloc(25, sizeof(int**)); //1代表黑子 2代表白子
+	for (int i = 0; i <= 20; ++i)
+	{
+		*(boardlay + i) = (int*)calloc(25, sizeof(int));
+	}
+	//读档
+	int hand = loadgame(boardlay); // 黑子先落子 1黑子 2白子
 
+game_start:
+	FlushMouseMsgBuffer();
+
+	while (1)
+	{
+		if (hand == 1) //落黑子
+		{
+			//while (1)//(human)
+			//{
+			//	MOUSEMSG mouse = GetMouseMsg(); // 获取鼠标信息
+			//									//mouse.x
+			//									//mouse.y
+			//	int mx = mouse.x;
+			//	int my = mouse.y;
+			//	if (mx >= 990 && mx <= 1190 && my >= 820 && my <= 895) //退出按钮
+			//	{
+			//		if (quitgame(mouse.mkLButton))
+			//		{
+			//			return;
+			//		}
+			//	}
+			//	if (mx >= 990 && mx <= 1190 && my >= 765 && my <= 820) //存档按钮
+			//	{
+			//		savegame(boardlay, mouse.mkLButton, 1);
+			//	}
+			//	getpos(mx, my);
+				//if (mx >= 1 && mx <= 15 && my >= 1 && my <= 15 && boardlay[mx][my] == 0)
+				//{
+				//	//绘制标识区域
+				//	if (mouse.mkLButton)
+				//	{
+				//		boardlay[mx][my] = 1;
+				//		//绘制棋子
+				//		setlinecolor(BLACK);
+				//		setfillstyle(BS_SOLID);
+				//		setfillcolor(BLACK);
+				//		fillcircle((mx - 1) * 60 + 55, (my - 1) * 60 + 55, 20);
+				//		hand = 2;
+				//		break;
+				//	}
+				//}
+			//}
+			clock_t st_time = clock();
+			printf("开始计算......");
+			int ans = ai_cal(chb, chbmstep, hand, difficulty);
+			clock_t en_time = clock();
+			printf("          本次计算耗时%lf\n", (double)en_time - (double)st_time);
+			int2 pos;
+			pos.x = ans / 15;
+			pos.y = ans % 15;
+			//putjson(pos);
+			chess_flow[step - 1] = pos;
+			chess_add(pos.x, pos.y);//自己的
+			int mx = pos.y + 1;
+			int my = pos.x + 1;
+			boardlay[mx][my] = 1;
+
+			//绘制棋子
+			setlinecolor(BLACK);
+			setfillstyle(BS_SOLID);
+			setfillcolor(BLACK);
+			setfillcolor(BLACK);
+			fillcircle((mx - 1) * 60 + 55, (my - 1) * 60 + 55, 20);
+			hand = 2;
+		}
+		else if (hand == 2) //落白子
+		{
+			while (1)
+			{
+				MOUSEMSG mouse = GetMouseMsg(); // 获取鼠标信息
+				int mx = mouse.x;//mouse.x
+				int my = mouse.y;//mouse.y
+				if (mx >= 990 && mx <= 1190 && my >= 820 && my <= 895)
+				{
+					if (quitgame(mouse.mkLButton))
+					{
+						return;
+					}
+				}
+				if (mx >= 990 && mx <= 1190 && my >= 765 && my <= 820) //存档按钮
+				{
+					savegame(chess_flow, mouse.mkLButton, 2);
+				}
+				getpos(mx, my);
+				if (mx >= 1 && mx <= 15 && my >= 1 && my <= 15 && boardlay[mx][my] == 0)
+				{
+					//绘制标识区域
+					if (mouse.mkLButton)
+					{
+						chess_flow[step - 1] = { my - 1,mx - 1 };
+						chess_add(my - 1, mx - 1);//人类下
+						boardlay[mx][my] = 2;
+						//绘制棋子
+						setlinestyle(PS_SOLID | PS_JOIN_BEVEL, 1);
+						setfillstyle(BS_SOLID);
+						setfillcolor(WHITE);
+						fillcircle((mx - 1) * 60 + 55, (my - 1) * 60 + 55, 20);
+						hand = 1;
+						break;
+					}
+				}
+			} //玩家
+		}
+		//printf("%d\n", overall_evaluate(boardlay));
+		if (win(boardlay)) //判断胜负关系
+		{
+			break; //跳出
+		}
+	}
+	gamesettlement(boardlay);
+	HWND wnd = GetHWnd();
+	if (MessageBox(wnd, _T("再来一局？\n"), _T("Warning"), MB_YESNO | MB_ICONQUESTION) == IDYES)
+	{
+		cleardevice();
+		closegraph();
+		board_init();
+		hand = 1;
+		for (int i = 1; i <= 15; i++)
+		{
+			for (int j = 1; j <= 15; j++)
+			{
+				boardlay[i][j] = 0;
+			}
+		}
+		for (int i = 0; i < 225; i++)
+		{
+			chb[i] = 0;
+		}
+		for (int i = 0; i < 900; i++)
+		{
+			chbmstep[i] = 0;
+		}
+		step = 1;
+		goto game_start;
+	}
+	free(boardlay);
+	return;
+}
+//
+
+//初始化函数
 void privacyreq()
 {
 	printf("\a");
@@ -853,124 +1944,28 @@ void privacyreq()
 	}
 	return;
 }
-
-void game()
+void difficultreq()
 {
-	//申请棋盘空间
-	int** boardlay = (int**)calloc(25, sizeof(int**)); //1代表黑子 2代表白子
-	for (int i = 0; i <= 20; ++i)
-	{
-		*(boardlay + i) = (int*)calloc(25, sizeof(int));
-	}
-	//读档
-	int hand = loadgame(boardlay); // 黑子先落子 1黑子 2白子
-game_start:
-	FlushMouseMsgBuffer();
-	while (1)
-	{
-		if (hand == 1) //落黑子
-		{
-			while (1)
-			{
-				MOUSEMSG mouse = GetMouseMsg(); // 获取鼠标信息
-												//mouse.x
-												//mouse.y
-				int mx = mouse.x;
-				int my = mouse.y;
-				if (mx >= 990 && mx <= 1190 && my >= 820 && my <= 895) //退出按钮
-				{
-					if (quitgame(mouse.mkLButton))
-					{
-						return;
-					}
-				}
-				if (mx >= 990 && mx <= 1190 && my >= 765 && my <= 820) //存档按钮
-				{
-					savegame(boardlay, mouse.mkLButton, 1);
-				}
-				getpos(mx, my);
-				if (mx >= 1 && mx <= 15 && my >= 1 && my <= 15 && boardlay[mx][my] == 0)
-				{
-					//绘制标识区域
-					if (mouse.mkLButton)
-					{
-						boardlay[mx][my] = 1;
-						//绘制棋子
-						setlinecolor(BLACK);
-						setfillstyle(BS_SOLID);
-						setfillcolor(BLACK);
-						fillcircle((mx - 1) * 60 + 55, (my - 1) * 60 + 55, 20);
-						hand = 2;
-						break;
-					}
-				}
-			}
-		}
-		else if (hand == 2) //落白子
-		{
-			while (1)
-			{
-				MOUSEMSG mouse = GetMouseMsg(); // 获取鼠标信息
-												//mouse.x
-												//mouse.y
-				int mx = mouse.x;
-				int my = mouse.y;
-				if (mx >= 990 && mx <= 1190 && my >= 820 && my <= 895)
-				{
-					if (quitgame(mouse.mkLButton))
-					{
-						return;
-					}
-				}
-				if (mx >= 990 && mx <= 1190 && my >= 765 && my <= 820) //存档按钮
-				{
-					savegame(boardlay, mouse.mkLButton, 2);
-				}
-				getpos(mx, my);
-				if (mx >= 1 && mx <= 15 && my >= 1 && my <= 15 && boardlay[mx][my] == 0)
-				{
-					//绘制标识区域
-					if (mouse.mkLButton)
-					{
-						boardlay[mx][my] = 2;
-						//绘制棋子
-						setlinestyle(PS_SOLID | PS_JOIN_BEVEL, 1);
-						setfillstyle(BS_SOLID);
-						setfillcolor(WHITE);
-						fillcircle((mx - 1) * 60 + 55, (my - 1) * 60 + 55, 20);
-						hand = 1;
-						break;
-					}
-				}
-			} //玩家
-		}
-		printf("%d\n", overall_evaluate(boardlay));
-		if (win(boardlay)) //判断胜负关系
-		{
-			break; //跳出
-		}
-	}
-	gamesettlement(boardlay);
+	printf("\a");
 	HWND wnd = GetHWnd();
-	if (MessageBox(wnd, _T("再来一局？\n"), _T("Warning"), MB_YESNO | MB_ICONQUESTION) == IDYES)
+	if (MyMessageBoxA(wnd, _T("请选择您需要的难度"), _T("Warning"), MB_YESNO) == IDYES)
 	{
-		cleardevice();
-		closegraph();
-		board_init();
-		hand = 1;
-		for (int i = 1; i <= 15; i++)
+		if (MyMessageBoxB(wnd, _T("不是吧，这都嫌难？"), _T("Warning"), MB_YESNO) == IDYES)
 		{
-			for (int j = 1; j <= 15; j++)
-			{
-				boardlay[i][j] = 0;
-			}
+			difficulty = 3;
 		}
-		goto game_start;
+		else
+		{
+			difficulty = 4;
+		}
+
 	}
-	free(boardlay);
+	else
+	{
+		difficulty = 5;
+	}
 	return;
 }
-
 void board_init() //绘制原始棋盘
 {
 	initgraph(1250, 920, SHOWCONSOLE); // 初始化绘图环境
@@ -1040,4 +2035,14 @@ void board_init() //绘制原始棋盘
 	info = cord;
 	info.lfHeight = 30;
 	info.lfWidth = 11;
+	for (int i = 0; i < 225; i++)
+	{
+		chb[i] = 0;
+	}
+	for (int i = 0; i < 900; i++)
+	{
+		chbmstep[i] = 0;
+	}
+	step = 1;
 }
+//

@@ -20,17 +20,28 @@
 #include <Ntddstor.h>
 #include <fstream>
 #include <direct.h>
+struct int2
+{
+	int x, y;
+};
 void board_init();
+void difficultreq();
 void game();
 void getpos(int& x, int& y);
 int win(int** a);
 void gamesettlement(int** a);
 bool quitgame(bool click);
-void savegame(int** a, bool click, int hand);
+void savegame(int2* a, bool click, int hand);
 int loadgame(int** a);
-int overall_evaluate(int** boardlay);
-void ai(int** boardlay, int& tarx, int& tary);
 void privacyreq();
+int gvab(char* chbm);
+int gvaw(char* chbm);
+int cho(int* chbt, char* chbm, int turn, int rt, int depth, int expect);
+void chess_add(int x, int y);
+void uchbm(int* chbt, char* chbm, int posx, int posy, int turn);
+int gvaldivb(char* chbm, int* chbt, int x, int y);
+int gvaldivw(char* chbm, int* chbt, int x, int y);
+int ai_cal(int* chbt, char* chbm, int turn, int depth);
 LOGFONT cord;//坐标
 LOGFONT opti;//选项
 LOGFONT info;//信息栏
@@ -42,14 +53,13 @@ std::string Endpoint = "oss-cn-beijing.aliyuncs.com";
 std::string BucketName = "wuziqi-sav";
 std::string ObjectName;
 bool cloudsave;
-struct node
-{
-	int five;//100000
-	int four;//10000
-	int sub_four;//1000
-	int three;//1000
-	int sub_three;//100
-	int two;//100
-	int sub_two;//10
-	int one;//10
-};
+int2 chess_flow[300];//记录对局
+int difficulty;
+int chb[225];
+int step;
+int steppos[255];
+char chbmstep[900];
+const int valmapb[31] = { 0, 0, 2, 4, 0, 4, 35, 0, 15, 300, 0, 600, 100000, 200000, 200000, 200000, 0, -1, -2, 0, -2, -15, 0, -10, -100, 0, -200, -1000, -200000, -200000, -200000 };
+const int valmapw[31] = { 0, 0, 1, 2, 0, 2, 15, 0, 10, 100, 0, 200, 1000, 200000, 200000, 200000, 0, -2, -4, 0, -4, -35, 0, -15, -300, 0, -600, -100000, -200000, -200000, -200000 };
+const int valmapwa[31] = { 0, 0, 2, 4, 0, 8, 70, 0, 45, 900, 0, 24000, 400000, 1000000, 1000000, 1000000, 0, -1, -2, 0, -4, -30, 0, -30, -300, 0, -800, -4000, -1000000, -1000000, -1000000 };
+const int valmapba[31] = { 0, 0, 1, 2, 0, 4, 30, 0, 30, 300, 0, 800, 4000, 1000000, 1000000, 1000000, 0, -2, -4, 0, -8, -70, 0, -45, -900, 0, -2400, -400000, -1000000, -1000000, -1000000 };
