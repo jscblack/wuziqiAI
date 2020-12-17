@@ -1345,10 +1345,6 @@ int uploadsav()
 {
 	using namespace AlibabaCloud::OSS;
 	/* 初始化OSS账号信息 */
-	//std::string AccessKeyId = "LTAI4G9vzd4PdQJwV8tQRsKG";
-	//std::string AccessKeySecret = "N53YmQiN0I09wmKJt230vxinKjeOd8";
-	//std::string Endpoint = "oss-cn-beijing.aliyuncs.com";
-	//std::string BucketName = "wuziqi-sav";
 	/* yourObjectName表示上传文件到OSS时需要指定包含文件后缀在内的完整路径，例如abc/efg/123.jpg */
 
 	/* 初始化网络等资源 */
